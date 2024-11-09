@@ -1,12 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Timer from './Timer';
 import Counter from './Counter';
 
-const PhaseTracker = ({ phase, onPhaseComplete }) => {
+const PhaseTracker = ({ phase, onPhaseComplete, totalMoves, setTotalMoves }) => {
   const [time, setTime] = useState(0);
+
+  // Reset Total Moves only when entering the Climbing Phase (Phase 1)
+  useEffect(() => {
+    if (phase === 1) {
+      setTotalMoves(0);
+    }
+  }, [phase, setTotalMoves]);
 
   const handleComplete = () => {
     onPhaseComplete(time);
+  };
+
+  // Helper function to update Total Moves based on increments/decrements
+  const updateTotalMoves = (change) => {
+    setTotalMoves((prevMoves) => prevMoves + change);
   };
 
   const phaseContent = () => {
@@ -21,13 +33,23 @@ const PhaseTracker = ({ phase, onPhaseComplete }) => {
       return (
         <div>
           <h2>Climbing Phase</h2>
-          <Counter label="Total Moves" increment={1} />
+          {/* Main Total Moves counter */}
+          <Counter
+            label="Total Moves"
+            increment={1}
+            count={totalMoves}
+            updateCount={(newCount) => setTotalMoves(newCount)}
+          />
           <div className="climbing-sub-groups">
-            {['V5-', 'V5-V6', 'V7-V8', 'V9-V10', 'V11+'].map((level) => (
-              <div key={level}>
+            {['<V5', 'V5-V6', 'V7-V8', 'V9-V10', 'V11+'].map((level) => (
+              <div key={level} className="climbing-group">
                 <h3>{level}</h3>
-                <Counter label={`${level} Sends`} increment={1} />
-                <Counter label={`${level} Flashes`} increment={1} />
+                <div className="counters-row">
+                  {/* Each counter here will update the total moves */}
+                  <Counter label="Attempts" increment={1} updateCount={updateTotalMoves} />
+                  <Counter label="Sends" increment={1} updateCount={updateTotalMoves} />
+                  <Counter label="Flashes" increment={1} updateCount={updateTotalMoves} />
+                </div>
               </div>
             ))}
           </div>
@@ -37,7 +59,7 @@ const PhaseTracker = ({ phase, onPhaseComplete }) => {
       return (
         <div>
           <h2>Rehab Phase</h2>
-          <p>Track any rehab activities here if needed.</p>
+          <Counter label="Rehab Sets" increment={1} />
         </div>
       );
     }

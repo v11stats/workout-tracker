@@ -3,11 +3,49 @@
   font-family: Arial, sans-serif;
 }
 
-.counter, .timer {
+.timer {
   margin: 1rem;
 }
 
-button {
-  margin: 0 5px;
-  padding: 5px 10px;
+.counter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.buttons {
+  display: flex;
+  flex-direction: column; /* Makes buttons stack vertically */
+  align-items: center;
+  gap: 10px; /* Adds space between buttons and the counter */
+  padding: 10px;
+  font-size: 16px;
+  border: 3px solid #FF51EB; /* Adds a raised border */
+  border-radius: 8px; /* Rounds the corners of the border */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Adds a shadow to create a raised effect */
+  background-color: white; /* Sets the background color to white */
+}
+
+.button {
+  margin-top: 20px;
+  padding: 10px;
+  font-size: 16px;
+  color: #FF51EB; /* Adds the color to the button text */
+}
+
+.climbing-sub-groups {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centers the climbing-sub-groups */
+}
+
+.climbing-group {
+  margin-bottom: 20px;
+}
+
+.counters-row {
+  display: flex;
+  gap: 20px; /* Adds space between the counters */
+  justify-content: flex-start;
+  align-items: center;
 }
