@@ -1,38 +1,53 @@
 import React, { useState, useEffect } from 'react';
+import PhaseTracker from './components/PhaseTracker';
+import Timer from './components/Timer';
+import './App.css';
+import { fetchData } from './api';
 
-const Counter = ({ label, increment, updateCount, count }) => {
-  const [localCount, setLocalCount] = useState(count || 0);
+function App() {
+  const [data, setData] = useState(null);
+  const [phase, setPhase] = useState(0);
+  const [durations, setDurations] = useState({ warmUp: 0, climbing: 0, rehab: 0 });
+  const [totalMoves, setTotalMoves] = useState(0);
 
   useEffect(() => {
-    if (count !== undefined) {
-      setLocalCount(count);
-    }
-  }, [count]);
+    const getData = async () => {
+      const result = await fetchData();
+      setData(result);
+    };
+    getData();
+  }, []);
 
-  const handleIncrement = () => {
-    const newCount = localCount + increment;
-    setLocalCount(newCount);
-    if (updateCount) {
-      updateCount(increment); // Increment Total Moves by 1
-    }
-  };
+  const handleNextPhase = (duration) => {
+    if (phase === 0) setDurations((d) => ({ ...d, warmUp: duration }));
+    else if (phase === 1) setDurations((d) => ({ ...d, climbing: duration }));
+    else if (phase === 2) setDurations((d) => ({ ...d, rehab: duration }));
 
-  const handleDecrement = () => {
-    const newCount = localCount - increment;
-    setLocalCount(newCount);
-    if (updateCount) {
-      updateCount(-increment); // Decrement Total Moves by 1
-    }
+    setPhase(phase + 1);
   };
 
   return (
-    <div className="counter">
-      <h4>{label}</h4>
-      <button onClick={handleIncrement}>+</button>
-      <span>{localCount}</span>
-      <button onClick={handleDecrement}>-</button>
+    <div className="app">
+      <h1>Workout Tracker</h1>
+      <h2>{data ? data : 'Loading data...'}</h2>
+      {phase < 3 ? (
+        <PhaseTracker
+          phase={phase}
+          onPhaseComplete={handleNextPhase}
+          totalMoves={totalMoves}
+          setTotalMoves={setTotalMoves}
+        />
+      ) : (
+        <div className="summary">
+          <h2>Workout Summary</h2>
+          <p>Warm-up duration: {durations.warmUp} seconds</p>
+          <p>Climbing duration: {durations.climbing} seconds</p>
+          <p>Rehab duration: {durations.rehab} seconds</p>
+          <p>Total Moves during Climbing Phase: {totalMoves}</p>
+        </div>
+      )}
     </div>
   );
-};
+}
 
-export default Counter;
+export default App;
