@@ -15,7 +15,7 @@
     "react",
     "Vercel"
   ],
-  "author": "Your Name",
+  "author": "Mike Wohner",
   "license": "MIT",
   "dependencies": {
     "@capacitor/android": "^6.1.2",
