@@ -1,6 +1,31 @@
 .app {
   text-align: center;
   font-family: Arial, sans-serif;
+  background-image: url('https://images.unsplash.com/photo-1586901910078-df0158849391?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  min-height: 100vh; /* Ensure it covers the full viewport height */
+  color: #fff; /* Default text color to white for better readability on dark image */
+  padding: 20px; /* Add some padding so content doesn't touch edges */
+  position: relative; /* Needed for pseudo-element overlay */
+}
+
+.app::before { /* Pseudo-element for background overlay */
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6); /* Darker semi-transparent black overlay for better contrast */
+  z-index: 1; /* Ensure overlay is behind content */
+}
+
+/* Ensure content is above the overlay */
+.app > * {
+  position: relative;
+  z-index: 2;
 }
 
 .timer {
@@ -22,15 +47,30 @@
   font-size: 16px;
   border: 3px solid #FF51EB; /* Adds a raised border */
   border-radius: 8px; /* Rounds the corners of the border */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Adds a shadow to create a raised effect */
-  background-color: white; /* Sets the background color to white */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Slightly darker shadow for better depth on image */
+  background-color: rgba(255, 255, 255, 0.85); /* Slightly transparent white for buttons background */
+  color: #333; /* Darker text for buttons for contrast on light background */
 }
 
 .button {
   margin-top: 20px;
-  padding: 10px;
+  padding: 10px 15px; /* Added horizontal padding */
   font-size: 16px;
-  color: #FF51EB; /* Adds the color to the button text */
+  color: #fff; /* White text for button */
+  background-color: #FF51EB; /* Theme color for button background */
+  border: none; /* Remove default border */
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.button:hover {
+  background-color: #d936a0; /* Darker shade on hover */
+}
+
+/* General text readability improvements */
+h1, h2, h3, p, label {
+  text-shadow: 1px 1px 4px rgba(0,0,0,0.8); /* Stronger text shadow for better readability */
 }
 
 .climbing-sub-groups {
@@ -46,6 +86,48 @@
 .counters-row {
   display: flex;
   gap: 20px; /* Adds space between the counters */
-  justify-content: flex-start;
+  justify-content: center; /* Center counters row for better aesthetics */
   align-items: center;
+  background-color: rgba(0,0,0,0.4); /* Add a slight background to counter rows for grouping */
+  padding: 15px;
+  border-radius: 8px;
+  margin-top: 10px; /* Add space above counter rows */
+}
+
+/* Style summary text for better contrast */
+.summary {
+  background-color: rgba(0, 0, 0, 0.7); /* Darker background for summary box */
+  padding: 25px;
+  border-radius: 10px;
+  display: inline-block; /* To make it not full width */
+  margin-top: 20px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.5);
+}
+
+.summary h2 {
+  color: #FF51EB; /* Theme color for summary heading */
+}
+
+.summary h3 {
+  color: #eee; /* Lighter color for subheadings */
+  margin-top: 15px;
+}
+
+.summary p, .summary li {
+  color: #fff; /* Ensure text inside summary is light */
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+  font-size: 1.1em;
+}
+
+.summary ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.summary li {
+  background-color: rgba(255,255,255,0.15);
+  margin-bottom: 8px;
+  padding: 10px;
+  border-radius: 5px;
+  border-left: 3px solid #FF51EB; /* Theme accent line */
 }
