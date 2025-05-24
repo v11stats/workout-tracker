@@ -12,19 +12,16 @@ const FingerboardForm = ({ onFingerboardDataUpdate }) => {
   const [weightedPulls, setWeightedPulls] = useState({ weight: '', reps: '' });
 
   useEffect(() => {
-    // Pass both hangboard sets and weighted pulls data
     onFingerboardDataUpdate({ hangboardSets: sets, weightedPulls: weightedPulls });
   }, [sets, weightedPulls, onFingerboardDataUpdate]);
 
   const handleChange = (setId, field, value) => {
     let numericValue = Number(value);
-    // Ensure weight and duration are not negative
     if (field === 'weight' || field === 'duration') {
       if (numericValue < 0) {
         numericValue = 0;
       }
     }
-
     setSets(prevSets =>
       prevSets.map(set =>
         set.id === setId ? { ...set, [field]: numericValue } : set
@@ -32,14 +29,11 @@ const FingerboardForm = ({ onFingerboardDataUpdate }) => {
     );
   };
 
-  };
-
   const handleWeightedPullsChange = (field, value) => {
     let numericValue = Number(value);
     if (numericValue < 0) {
       numericValue = 0;
     }
-    // Allow empty string to clear the input, otherwise store as number
     setWeightedPulls(prev => ({ ...prev, [field]: value === '' ? '' : numericValue }));
   };
 
@@ -48,23 +42,23 @@ const FingerboardForm = ({ onFingerboardDataUpdate }) => {
       <h4>Hangboard Sets</h4>
       {sets.map(set => (
         <div key={set.id} className="fingerboard-set">
-          <h5>Set {set.id + 1}</h5> {/* Changed to h5 for better hierarchy */}
+          <h5>Set {set.id + 1}</h5>
           <div className="form-field">
-            <label htmlFor={`hang-weight-${set.id}`}>Weight Added (lbs):</label> {/* Clarified label for hangboard */}
+            <label htmlFor={`hang-weight-${set.id}`}>Weight Added (lbs):</label>
             <input
               type="number"
-              id={`hang-weight-${set.id}`} {/* Ensure unique ID */}
-              min="0" // Prevent negative numbers at browser level
+              id={`hang-weight-${set.id}`}
+              min="0"
               value={set.weight}
               onChange={e => handleChange(set.id, 'weight', e.target.value)}
             />
           </div>
           <div className="form-field">
-            <label htmlFor={`hang-duration-${set.id}`}>Hang Duration (s):</label> {/* Clarified label & unique ID */}
+            <label htmlFor={`hang-duration-${set.id}`}>Hang Duration (s):</label>
             <input
               type="number"
-              id={`hang-duration-${set.id}`} {/* Ensure unique ID */}
-              min="0" // Also ensure duration is not negative
+              id={`hang-duration-${set.id}`}
+              min="0"
               value={set.duration}
               onChange={e => handleChange(set.id, 'duration', e.target.value)}
             />
@@ -72,7 +66,7 @@ const FingerboardForm = ({ onFingerboardDataUpdate }) => {
         </div>
       ))}
 
-      <hr className="form-divider" /> {/* Visual separator */}
+      <hr className="form-divider" />
 
       <h4>Weighted Pulls</h4>
       <div className="weighted-pulls-section">
