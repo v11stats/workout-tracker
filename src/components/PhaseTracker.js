@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import Timer from './Timer';
+import React, { useEffect } from 'react'; // Removed useState
+// Timer is no longer used here
 import Counter from './Counter';
 import FingerboardForm from './FingerboardForm';
 
 const PhaseTracker = ({ phase, onPhaseComplete, totalMoves, setTotalMoves, onFingerboardDataChange }) => {
-  const [time, setTime] = useState(0);
+  // Removed time state: const [time, setTime] = useState(0);
 
   // Reset Total Moves only when entering the Climbing Phase (Phase 1)
   useEffect(() => {
@@ -14,7 +14,7 @@ const PhaseTracker = ({ phase, onPhaseComplete, totalMoves, setTotalMoves, onFin
   }, [phase, setTotalMoves]);
 
   const handleComplete = () => {
-    onPhaseComplete(time);
+    onPhaseComplete(); // Call without time argument
   };
 
   // Helper function to update Total Moves based on increments/decrements
@@ -62,7 +62,7 @@ const PhaseTracker = ({ phase, onPhaseComplete, totalMoves, setTotalMoves, onFin
       return (
         <div>
           <h2>Rehab Phase</h2>
-          <Counter label="Rehab Sets" increment={1} />
+          <Counter label="Rehab Sets" increment={1} buttonClassName="climbing-action-button" />
         </div>
       );
     }
@@ -70,7 +70,7 @@ const PhaseTracker = ({ phase, onPhaseComplete, totalMoves, setTotalMoves, onFin
 
   return (
     <div>
-      <Timer onTimeUpdate={setTime} />
+      {/* Timer component removed */}
       {phaseContent()}
       <button onClick={handleComplete}>Complete Phase</button>
     </div>
