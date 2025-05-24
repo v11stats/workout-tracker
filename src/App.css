@@ -219,3 +219,42 @@ h1, h2, h3, p, label {
 .total-moves-tracker .counter button:hover {
   background-color: #5a6268;
 }
+
+/* Styles for the initial "Start Workout" view */
+.start-workout-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  padding: 20px;
+  background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent background for the container */
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.start-workout-button { /* Specific styling for the start button if needed, inherits from .button */
+  font-size: 1.2em; /* Slightly larger font for the start button */
+  padding: 12px 25px; /* More padding for prominence */
+}
+
+.start-prompt-message {
+  font-size: 1.1em;
+  margin-top: 15px; /* Increased margin from button */
+  color: #f0f0f0; /* Light color for good contrast on dark overlay/container */
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+}
+
+/* Styles for the Global Timer display */
+.global-timer-display {
+  font-size: 1.6em; /* Increased font size for global timer */
+  font-weight: bold;
+  color: #FF51EB; /* Theme color for visibility */
+  margin-top: 15px; /* Adjusted margin */
+  margin-bottom: 20px;
+  text-shadow: 1px 1px 5px rgba(0,0,0,0.9); /* Stronger shadow for prominence */
+  background-color: rgba(0, 0, 0, 0.5); /* Optional: slight background to make it pop */
+  padding: 10px;
+  border-radius: 5px;
+  display: inline-block; /* To make background fit content */
+}

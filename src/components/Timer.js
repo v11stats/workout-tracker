@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-const formatTime = (totalSeconds) => {
+export const formatTime = (totalSeconds) => { // Added export keyword
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const secs = totalSeconds % 60;
@@ -15,20 +15,34 @@ const formatTime = (totalSeconds) => {
   return `${paddedMins}:${paddedSecs}`;
 };
 
-const Timer = ({ onTimeUpdate }) => {
+const Timer = ({ onTimeUpdate, startTime }) => {
   const [seconds, setSeconds] = useState(0);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setSeconds((prevSeconds) => {
-        const newSeconds = prevSeconds + 1;
-        onTimeUpdate(newSeconds); // Call with the new seconds value
-        return newSeconds;
-      });
-    }, 1000);
+    if (startTime) {
+      // Calculate initial elapsed time
+      const initialElapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+      setSeconds(initialElapsedSeconds);
+      onTimeUpdate(initialElapsedSeconds);
 
-    return () => clearInterval(interval);
-  }, [onTimeUpdate]); // seconds removed from dependency array as it's handled via functional update
+      const interval = setInterval(() => {
+        const currentElapsedTime = Math.floor((Date.now() - startTime) / 1000);
+        setSeconds(currentElapsedTime);
+        onTimeUpdate(currentElapsedTime);
+      }, 1000);
+      return () => clearInterval(interval);
+    } else {
+      // Original behavior: increment seconds from 0
+      const interval = setInterval(() => {
+        setSeconds((prevSeconds) => {
+          const newSeconds = prevSeconds + 1;
+          onTimeUpdate(newSeconds); // Call with the new seconds value
+          return newSeconds;
+        });
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [onTimeUpdate, startTime]);
 
   return (
     <div className="timer">

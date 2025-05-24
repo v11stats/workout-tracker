@@ -1,0 +1,6 @@
+node_modules/
+# Add other common ignores for React projects if needed
+build/
+.DS_Store
+*.log
+coverage/
