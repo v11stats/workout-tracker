@@ -9,6 +9,7 @@ function App() {
   const [phase, setPhase] = useState(0);
   const [durations, setDurations] = useState({ warmUp: 0, climbing: 0, rehab: 0 });
   const [totalMoves, setTotalMoves] = useState(0);
+  const [fingerboardData, setFingerboardData] = useState([]);
 
   useEffect(() => {
     const getData = async () => {
@@ -26,6 +27,10 @@ function App() {
     setPhase(phase + 1);
   };
 
+  const handleFingerboardUpdate = (data) => {
+    setFingerboardData(data);
+  };
+
   return (
     <div className="app">
       <h1>Workout Tracker</h1>
@@ -36,6 +41,7 @@ function App() {
           onPhaseComplete={handleNextPhase}
           totalMoves={totalMoves}
           setTotalMoves={setTotalMoves}
+          onFingerboardDataChange={handleFingerboardUpdate}
         />
       ) : (
         <div className="summary">
@@ -44,6 +50,18 @@ function App() {
           <p>Climbing duration: {durations.climbing} seconds</p>
           <p>Rehab duration: {durations.rehab} seconds</p>
           <p>Total Moves during Climbing Phase: {totalMoves}</p>
+          <h3>Fingerboard Data</h3>
+          {fingerboardData && fingerboardData.length > 0 ? (
+            <ul>
+              {fingerboardData.map((set, index) => (
+                <li key={set.id}>
+                  Set {index + 1}: {set.weight} kg, {set.duration} secs
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No fingerboard data recorded.</p>
+          )}
         </div>
       )}
     </div>

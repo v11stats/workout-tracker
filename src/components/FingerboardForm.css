@@ -1,0 +1,56 @@
+.fingerboard-form {
+  display: flex;
+  flex-direction: column;
+  gap: 25px; /* Increased gap between sets */
+  padding: 15px;
+  border: 1px solid #444; /* Darker border for better visibility on potential background */
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.1); /* Slight white background for readability */
+}
+
+.fingerboard-set {
+  border: 1px solid #555; /* Darker border for set groups */
+  padding: 15px;
+  border-radius: 5px;
+  background-color: rgba(0, 0, 0, 0.2); /* Slightly darker background for each set */
+}
+
+.fingerboard-set h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #eee; /* Lighter text color for contrast */
+  font-size: 1.3em;
+}
+
+.form-field {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px; /* Spacing between fields within a set */
+}
+
+.form-field label {
+  min-width: 140px; /* Adjusted min-width */
+  font-weight: bold;
+  color: #ddd; /* Lighter text color */
+}
+
+.form-field input[type="number"] {
+  padding: 8px;
+  width: 100px; /* Adjusted width */
+  border: 1px solid #666;
+  border-radius: 4px;
+  background-color: #333; /* Darker input background */
+  color: #fff; /* Light input text color */
+  font-size: 1em;
+}
+
+/* Remove spinners from number inputs for a cleaner look */
+.form-field input[type="number"]::-webkit-outer-spin-button,
+.form-field input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.form-field input[type="number"] {
+  -moz-appearance: textfield; /* Firefox */
+}

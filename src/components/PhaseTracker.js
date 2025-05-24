@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Timer from './Timer';
 import Counter from './Counter';
+import FingerboardForm from './FingerboardForm';
 
-const PhaseTracker = ({ phase, onPhaseComplete, totalMoves, setTotalMoves }) => {
+const PhaseTracker = ({ phase, onPhaseComplete, totalMoves, setTotalMoves, onFingerboardDataChange }) => {
   const [time, setTime] = useState(0);
 
   // Reset Total Moves only when entering the Climbing Phase (Phase 1)
@@ -26,7 +27,7 @@ const PhaseTracker = ({ phase, onPhaseComplete, totalMoves, setTotalMoves }) => 
       return (
         <div>
           <h2>Warm-up Phase</h2>
-          <Counter label="Fingerboard Hangs (lbs)" increment={1} />
+          <FingerboardForm onFingerboardDataUpdate={onFingerboardDataChange} />
         </div>
       );
     } else if (phase === 1) {
