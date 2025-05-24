@@ -12,40 +12,77 @@ const formatDurationSummary = (totalSeconds) => {
 };
 
 const WORKOUT_START_TIME_KEY = "workoutStartTime";
+const PHASE_KEY = "appPhase"; // Key for storing phase in localStorage
 
 function App() {
   const [data, setData] = useState(null); // For API test data
   const [phase, setPhase] = useState(0);
   const [durations, setDurations] = useState({ warmUp: 0, climbing: 0, rehab: 0 });
   const [totalMoves, setTotalMoves] = useState(0);
-  // Updated fingerboardData state to hold an object for hangboard sets and weighted pulls
   const [fingerboardData, setFingerboardData] = useState({ hangboardSets: [], weightedPulls: null });
+  const [climbingStats, setClimbingStats] = useState({}); // New state for detailed climbing stats
 
   const [workoutStartTime, setWorkoutStartTime] = useState(null);
   const [totalElapsedTime, setTotalElapsedTime] = useState(0);
   const [lastPhaseEndTimeSeconds, setLastPhaseEndTimeSeconds] = useState(0);
 
-  // Effect to load workoutStartTime from localStorage on mount
+  // Function to reset all relevant states to their initial values
+  const resetAppStates = () => {
+    setPhase(0);
+    setWorkoutStartTime(null);
+    setTotalElapsedTime(0);
+    setDurations({ warmUp: 0, climbing: 0, rehab: 0 });
+    setLastPhaseEndTimeSeconds(0);
+    setTotalMoves(0);
+    setFingerboardData({ hangboardSets: [], weightedPulls: null });
+    setClimbingStats({}); // Reset climbing stats
+    // Also clear them from localStorage for a clean start next time (optional, phase is handled by its own effect)
+    localStorage.removeItem(WORKOUT_START_TIME_KEY);
+    // localStorage.setItem(PHASE_KEY, "0"); // Phase will be set by its own effect
+  };
+
+  // Effect to load workout state from localStorage on mount
   useEffect(() => {
     const storedStartTime = localStorage.getItem(WORKOUT_START_TIME_KEY);
-    if (storedStartTime) {
+    const storedPhase = localStorage.getItem(PHASE_KEY);
+
+    if (storedPhase && parseInt(storedPhase, 10) === 3 && !storedStartTime) {
+      // If summary page was the last state and workout has ended (no start time)
+      resetAppStates();
+    } else if (storedStartTime) {
       setWorkoutStartTime(parseInt(storedStartTime, 10));
+      if (storedPhase) { // If there's a start time, also restore phase
+        setPhase(parseInt(storedPhase, 10));
+      }
     }
+    // If no storedStartTime, app starts in initial state (phase 0), which is default.
   }, []);
+
+  // Effect to save phase to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(PHASE_KEY, phase.toString());
+  }, [phase]);
 
   // Effect to manage the global timer interval
   useEffect(() => {
     let intervalId;
-    if (workoutStartTime) {
-      // Update elapsed time immediately when workoutStartTime is set or loaded
+
+    if (workoutStartTime && phase < 3) {
+      // Update elapsed time immediately when workoutStartTime is set or loaded,
+      // and for subsequent updates as long as the phase is active.
       setTotalElapsedTime(Math.floor((Date.now() - workoutStartTime) / 1000));
 
       intervalId = setInterval(() => {
         setTotalElapsedTime(Math.floor((Date.now() - workoutStartTime) / 1000));
       }, 1000);
     }
-    return () => clearInterval(intervalId);
-  }, [workoutStartTime]);
+    // The cleanup function will clear the interval when the component unmounts
+    // or before the effect runs again (e.g., if workoutStartTime or phase changes).
+    // This handles clearing the interval when phase becomes 3.
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [workoutStartTime, phase]); // Add phase to dependency array
 
   useEffect(() => {
     const getData = async () => {
@@ -55,15 +92,41 @@ function App() {
     getData();
   }, []);
 
-  const handleNextPhase = () => { // Removed duration parameter
+  const handleNextPhase = () => {
     const currentPhaseDuration = totalElapsedTime - lastPhaseEndTimeSeconds;
+    const currentPhaseValue = phase; // Capture current phase value before updating state
 
-    if (phase === 0) setDurations((d) => ({ ...d, warmUp: currentPhaseDuration }));
-    else if (phase === 1) setDurations((d) => ({ ...d, climbing: currentPhaseDuration }));
-    else if (phase === 2) setDurations((d) => ({ ...d, rehab: currentPhaseDuration }));
+    if (currentPhaseValue === 0) {
+      setDurations((d) => ({ ...d, warmUp: currentPhaseDuration }));
+    } else if (currentPhaseValue === 1) {
+      setDurations((d) => ({ ...d, climbing: currentPhaseDuration }));
+    } else if (currentPhaseValue === 2) { // Transitioning to phase 3 (summary)
+      setDurations((d) => ({ ...d, rehab: currentPhaseDuration }));
+      localStorage.removeItem(WORKOUT_START_TIME_KEY); // Clear workout start time
+    }
     
-    setLastPhaseEndTimeSeconds(totalElapsedTime); // Update lastPhaseEndTimeSeconds
-    setPhase(phase + 1);
+    setLastPhaseEndTimeSeconds(totalElapsedTime);
+
+    const nextPhaseValue = currentPhaseValue + 1;
+    if (nextPhaseValue === 1) { // Resetting when *entering* Climbing Phase (from Warm-up)
+      setTotalMoves(0);
+      setClimbingStats({}); 
+    }
+    setPhase(nextPhaseValue);
+  };
+
+  const handleClimbingStatUpdate = (grade, type, increment) => {
+    const key = `${grade}_${type}`;
+    setClimbingStats(prevStats => ({
+      ...prevStats,
+      [key]: (prevStats[key] || 0) + increment
+    }));
+    // Ensure totalMoves is updated only by "attempts" to avoid double counting if sends/flashes also count as moves.
+    // Or, if sends/flashes are separate actions that constitute a move, then this is fine.
+    // For now, let's assume any recorded stat action (attempt, send, flash) counts towards totalMoves.
+    // If a "send" also implies an "attempt", this might lead to double counting totalMoves if not handled carefully in UI/logic.
+    // The current PhaseTracker calls updateTotalMoves for each counter type, so this behavior is maintained.
+    setTotalMoves(prevTotalMoves => prevTotalMoves + increment);
   };
 
   const handleFingerboardUpdate = (data) => {
@@ -75,11 +138,18 @@ function App() {
     csvContent += `Warm-up Duration,${formatDurationSummary(durations.warmUp)},duration\n`;
     csvContent += `Climbing Duration,${formatDurationSummary(durations.climbing)},duration\n`;
     csvContent += `Rehab Duration,${formatDurationSummary(durations.rehab)},duration\n`;
-    // Add total workout time to CSV
     csvContent += `Total Workout Time,${formatTime(totalElapsedTime)},duration\n`;
-    csvContent += `Total Moves (Climbing),${totalMoves},moves\n\n`;
+    csvContent += `Total Moves (Climbing),${totalMoves},moves\n`; // Overall total moves
 
-    // Updated CSV generation for new fingerboardData structure
+    // Detailed climbing stats
+    csvContent += "\nClimbing Details\nGrade,Type,Count\n";
+    Object.entries(climbingStats).forEach(([key, count]) => {
+      const [grade, type] = key.split('_');
+      csvContent += `${grade},${type},${count}\n`;
+    });
+    csvContent += "\n";
+    
+    // Fingerboard data
     if (fingerboardData && fingerboardData.hangboardSets && fingerboardData.hangboardSets.length > 0) {
       csvContent += "Hangboard Sets Data\n"; // Changed title for clarity
       csvContent += "Set,Weight (lbs),Duration (s)\n";
@@ -111,8 +181,12 @@ function App() {
 
   const handleStartWorkout = () => {
     const now = Date.now();
+    // Reset states before starting a new workout, ensuring phase is 0
+    resetAppStates(); // This will set phase to 0 and clear old data.
+    // Then, set the new workout start time.
     setWorkoutStartTime(now);
     localStorage.setItem(WORKOUT_START_TIME_KEY, now.toString());
+    // Phase is already set to 0 by resetAppStates, and its effect will store it.
   };
 
   // Removed the local formatGlobalTime function, as we now use the imported formatTime
@@ -140,12 +214,11 @@ function App() {
         <>
           {phase < 3 ? (
             <PhaseTracker
-              phase={phase}
+              phase={phase} // Only one phase prop needed
+              totalMoves={totalMoves} // Pass totalMoves for display in PhaseTracker header
               onPhaseComplete={handleNextPhase}
-              totalMoves={totalMoves}
-              setTotalMoves={setTotalMoves}
               onFingerboardDataChange={handleFingerboardUpdate}
-              // workoutStartTime will be passed to PhaseTracker in a later step if needed
+              handleClimbingStatUpdate={handleClimbingStatUpdate}
             />
           ) : (
             <div className="summary">
@@ -153,10 +226,25 @@ function App() {
               <p>Warm-up duration: {formatDurationSummary(durations.warmUp)}</p>
               <p>Climbing duration: {formatDurationSummary(durations.climbing)}</p>
               <p>Rehab duration: {formatDurationSummary(durations.rehab)}</p>
-              <p>Total Workout Time (summary): {formatTime(totalElapsedTime)}</p> {/* Use formatTime here too */}
+              <p>Total Workout Time (summary): {formatTime(totalElapsedTime)}</p>
               <p>Total Moves during Climbing Phase: {totalMoves}</p>
+
+              {/* ADD CONSOLE LOG HERE */}
+              { phase === 3 && console.log("climbingStats before display:", climbingStats) }
+
+              {/* Display Detailed Climbing Stats */}
+              <h3>Climbing Details</h3>
+              {Object.keys(climbingStats).length > 0 ? (
+                <ul>
+                  {Object.entries(climbingStats).map(([key, count]) => {
+                    const [grade, type] = key.split('_');
+                    return <li key={key}>{`${grade} - ${type}: ${count}`}</li>;
+                  })}
+                </ul>
+              ) : (
+                <p>No climbing details recorded.</p>
+              )}
               
-              {/* Display Hangboard Sets Data */}
               <h3>Hangboard Sets</h3>
               {fingerboardData && fingerboardData.hangboardSets && fingerboardData.hangboardSets.length > 0 ? (
                 <ul>
