@@ -35,21 +35,23 @@ const PhaseTracker = ({ phase, onPhaseComplete, totalMoves, setTotalMoves, onFin
         <div>
           <h2>Climbing Phase</h2>
           {/* Main Total Moves counter */}
-          <Counter
-            label="Total Moves"
-            increment={1}
-            count={totalMoves}
-            updateCount={(newCount) => setTotalMoves(newCount)}
-          />
+          <div className="total-moves-tracker">
+            <Counter
+              label="Total Moves"
+              increment={1}
+              count={totalMoves}
+              updateCount={(newCount) => setTotalMoves(newCount)}
+            />
+          </div>
           <div className="climbing-sub-groups">
             {['<V5', 'V5-V6', 'V7-V8', 'V9-V10', 'V11+'].map((level) => (
               <div key={level} className="climbing-group">
                 <h3>{level}</h3>
                 <div className="counters-row">
                   {/* Each counter here will update the total moves */}
-                  <Counter label="Attempts" increment={1} updateCount={updateTotalMoves} />
-                  <Counter label="Sends" increment={1} updateCount={updateTotalMoves} />
-                  <Counter label="Flashes" increment={1} updateCount={updateTotalMoves} />
+                  <Counter label="Attempts" increment={1} updateCount={updateTotalMoves} buttonClassName="climbing-action-button" />
+                  <Counter label="Sends" increment={1} updateCount={updateTotalMoves} buttonClassName="climbing-action-button" />
+                  <Counter label="Flashes" increment={1} updateCount={updateTotalMoves} buttonClassName="climbing-action-button" />
                 </div>
               </div>
             ))}
