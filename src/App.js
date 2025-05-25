@@ -17,7 +17,7 @@ const PHASE_KEY = "appPhase"; // Key for storing phase in localStorage
 function App() {
   const [data, setData] = useState(null); // For API test data
   const [phase, setPhase] = useState(0);
-  const [durations, setDurations] = useState({ warmUp: 0, climbing: 0, rehab: 0 });
+  const [durations, setDurations] = useState({ stretching: 0, hangboard: 0, climbing: 0, rehab: 0 });
   const [totalMoves, setTotalMoves] = useState(0);
   const [fingerboardData, setFingerboardData] = useState({ hangboardSets: [], weightedPulls: null });
   const [climbingStats, setClimbingStats] = useState({}); // New state for detailed climbing stats
@@ -31,7 +31,7 @@ function App() {
     setPhase(0);
     setWorkoutStartTime(null);
     setTotalElapsedTime(0);
-    setDurations({ warmUp: 0, climbing: 0, rehab: 0 });
+    setDurations({ stretching: 0, hangboard: 0, climbing: 0, rehab: 0 });
     setLastPhaseEndTimeSeconds(0);
     setTotalMoves(0);
     setFingerboardData({ hangboardSets: [], weightedPulls: null });
@@ -46,7 +46,7 @@ function App() {
     const storedStartTime = localStorage.getItem(WORKOUT_START_TIME_KEY);
     const storedPhase = localStorage.getItem(PHASE_KEY);
 
-    if (storedPhase && parseInt(storedPhase, 10) === 3 && !storedStartTime) {
+    if (storedPhase && parseInt(storedPhase, 10) === 4 && !storedStartTime) {
       // If summary page was the last state and workout has ended (no start time)
       resetAppStates();
     } else if (storedStartTime) {
@@ -67,7 +67,7 @@ function App() {
   useEffect(() => {
     let intervalId;
 
-    if (workoutStartTime && phase < 3) {
+    if (workoutStartTime && phase < 4) {
       // Update elapsed time immediately when workoutStartTime is set or loaded,
       // and for subsequent updates as long as the phase is active.
       setTotalElapsedTime(Math.floor((Date.now() - workoutStartTime) / 1000));
@@ -78,7 +78,7 @@ function App() {
     }
     // The cleanup function will clear the interval when the component unmounts
     // or before the effect runs again (e.g., if workoutStartTime or phase changes).
-    // This handles clearing the interval when phase becomes 3.
+    // This handles clearing the interval when phase becomes 4.
     return () => {
       clearInterval(intervalId);
     };
@@ -97,10 +97,12 @@ function App() {
     const currentPhaseValue = phase; // Capture current phase value before updating state
 
     if (currentPhaseValue === 0) {
-      setDurations((d) => ({ ...d, warmUp: currentPhaseDuration }));
+      setDurations((d) => ({ ...d, stretching: currentPhaseDuration }));
     } else if (currentPhaseValue === 1) {
+      setDurations((d) => ({ ...d, hangboard: currentPhaseDuration }));
+    } else if (currentPhaseValue === 2) {
       setDurations((d) => ({ ...d, climbing: currentPhaseDuration }));
-    } else if (currentPhaseValue === 2) { // Transitioning to phase 3 (summary)
+    } else if (currentPhaseValue === 3) { // Transitioning to phase 4 (summary)
       setDurations((d) => ({ ...d, rehab: currentPhaseDuration }));
       localStorage.removeItem(WORKOUT_START_TIME_KEY); // Clear workout start time
     }
@@ -108,7 +110,8 @@ function App() {
     setLastPhaseEndTimeSeconds(totalElapsedTime);
 
     const nextPhaseValue = currentPhaseValue + 1;
-    if (nextPhaseValue === 1) { // Resetting when *entering* Climbing Phase (from Warm-up)
+    // Resetting when *entering* Climbing Phase (which is now phase 2)
+    if (nextPhaseValue === 2) { 
       setTotalMoves(0);
       setClimbingStats({}); 
     }
@@ -135,7 +138,8 @@ function App() {
 
   const generateWorkoutCSV = () => {
     let csvContent = "Category,Value,Unit\n";
-    csvContent += `Warm-up Duration,${formatDurationSummary(durations.warmUp)},duration\n`;
+    csvContent += `Stretching Duration,${formatDurationSummary(durations.stretching)},duration\n`;
+    csvContent += `Hangboard Duration,${formatDurationSummary(durations.hangboard)},duration\n`;
     csvContent += `Climbing Duration,${formatDurationSummary(durations.climbing)},duration\n`;
     csvContent += `Rehab Duration,${formatDurationSummary(durations.rehab)},duration\n`;
     csvContent += `Total Workout Time,${formatTime(totalElapsedTime)},duration\n`;
@@ -152,9 +156,9 @@ function App() {
     // Fingerboard data
     if (fingerboardData && fingerboardData.hangboardSets && fingerboardData.hangboardSets.length > 0) {
       csvContent += "Hangboard Sets Data\n"; // Changed title for clarity
-      csvContent += "Set,Weight (lbs),Duration (s)\n";
+      csvContent += "Set,Weight (lbs),Duration (s),Edge Size\n";
       fingerboardData.hangboardSets.forEach((set, index) => {
-        csvContent += `${index + 1},${set.weight},${set.duration}\n`;
+        csvContent += `${index + 1},${set.weight},${set.duration},${set.edgeSize}\n`;
       });
     } else {
       csvContent += "No hangboard sets data recorded.\n";
@@ -193,7 +197,7 @@ function App() {
 
   return (
     <div className="app">
-      <h1 className="main-title">Workout Tracker</h1>
+      <h1 className="main-title">Workout Tracker {workoutStartTime !== null ? formatTime(totalElapsedTime) : ""}</h1>
       <h2>{data}</h2> {/* API test data display */}
 
       {workoutStartTime === null ? (
@@ -203,16 +207,12 @@ function App() {
           </button>
           <p className="start-prompt-message">Click "Start Workout" to begin tracking your session.</p>
         </div>
-      ) : (
-        <div className="global-timer-display">
-          <p>Total Workout Time: {formatTime(totalElapsedTime)}</p> {/* Use imported formatTime */}
-        </div>
-      )}
+      ) : null}
 
       {/* Main content: PhaseTracker or Summary, only shown when workout has started */}
       {workoutStartTime !== null && (
         <>
-          {phase < 3 ? (
+          {phase < 4 ? (
             <PhaseTracker
               phase={phase} // Only one phase prop needed
               totalMoves={totalMoves} // Pass totalMoves for display in PhaseTracker header
@@ -223,14 +223,15 @@ function App() {
           ) : (
             <div className="summary">
               <h2>Workout Summary</h2>
-              <p>Warm-up duration: {formatDurationSummary(durations.warmUp)}</p>
+              <p>Stretching duration: {formatDurationSummary(durations.stretching)}</p>
+              <p>Hangboard duration: {formatDurationSummary(durations.hangboard)}</p>
               <p>Climbing duration: {formatDurationSummary(durations.climbing)}</p>
               <p>Rehab duration: {formatDurationSummary(durations.rehab)}</p>
               <p>Total Workout Time (summary): {formatTime(totalElapsedTime)}</p>
               <p>Total Moves during Climbing Phase: {totalMoves}</p>
 
               {/* ADD CONSOLE LOG HERE */}
-              { phase === 3 && console.log("climbingStats before display:", climbingStats) }
+              { phase === 4 && console.log("climbingStats before display:", climbingStats) }
 
               {/* Display Detailed Climbing Stats */}
               <h3>Climbing Details</h3>
@@ -250,7 +251,7 @@ function App() {
                 <ul>
                   {fingerboardData.hangboardSets.map((set) => ( // Removed index as set.id should be unique if available from form
                     <li key={set.id}> {/* Assuming set objects have a unique id */}
-                      Set {set.id + 1}: {set.weight} lbs, {set.duration} secs
+                      Set {set.id + 1}: {set.weight} lbs, {set.duration} secs, Edge: {set.edgeSize}
                     </li>
                   ))}
                 </ul>
