@@ -77,7 +77,7 @@ const PhaseTracker = ({ phase, onPhaseComplete, totalMoves, onFingerboardDataCha
   return (
     <div>
       {phaseContent()}
-      <button onClick={handleComplete}>Complete Phase</button>
+      <button onClick={handleComplete} className="complete-phase-button">Complete Phase</button>
     </div>
   );
 };

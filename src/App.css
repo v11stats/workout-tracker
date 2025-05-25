@@ -258,3 +258,23 @@ h1, h2, h3, p, label {
   border-radius: 5px;
   display: inline-block; /* To make background fit content */
 }
+
+/* Styles for the "Complete Phase" button */
+.complete-phase-button {
+  margin-top: 20px; /* from .button */
+  padding: 12px 25px; /* from .start-workout-button */
+  font-size: 1.2em; /* from .start-workout-button */
+  color: #fff; /* from .button */
+  background-color: #FF51EB; /* from .button */
+  border: none; /* from .button */
+  border-radius: 5px; /* from .button */
+  cursor: pointer; /* from .button */
+  transition: background-color 0.3s ease; /* from .button */
+  display: block; /* Make it a block element to allow centering with margin auto */
+  margin-left: auto; /* Center the button */
+  margin-right: auto; /* Center the button */
+}
+
+.complete-phase-button:hover {
+  background-color: #d936a0; /* from .button:hover */
+}

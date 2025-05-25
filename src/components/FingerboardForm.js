@@ -4,7 +4,7 @@ import './FingerboardForm.css';
 const FingerboardForm = ({ onFingerboardDataUpdate }) => {
   const initialSets = Array.from({ length: 6 }, (_, i) => ({
     id: i,
-    weight: 0,
+    weight: '', // Changed from 0 to ''
     duration: 8, // Pre-populate with 8 seconds
     edgeSize: '10mm', // Default edge size
   }));
@@ -54,6 +54,7 @@ const FingerboardForm = ({ onFingerboardDataUpdate }) => {
               min="0"
               value={set.weight}
               onChange={e => handleChange(set.id, 'weight', e.target.value)}
+              placeholder="e.g., 10" // Added placeholder
             />
           </div>
           <div className="form-field">
@@ -66,7 +67,7 @@ const FingerboardForm = ({ onFingerboardDataUpdate }) => {
               onChange={e => handleChange(set.id, 'duration', e.target.value)}
             />
           </div>
-          <div className="form-field edge-size-group">
+          <div className="form-field edge-size-options">
             <span className="edge-size-label">Edge Size:</span>
             {['6mm', '8mm', '10mm'].map(size => (
               <label key={size} className="radio-label">
