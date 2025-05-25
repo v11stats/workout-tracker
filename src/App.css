@@ -7,8 +7,8 @@
   background-repeat: no-repeat;
   min-height: 100vh; /* Ensure it covers the full viewport height */
   color: #fff; /* Default text color to white for better readability on dark image */
-  /* Adjusted padding: top is 0 because .main-title handles its own spacing. */
-  padding: 0 20px 20px 20px;
+  /* Adjusted padding: top is 50px to account for fixed .main-title. */
+  padding: 50px 20px 20px 20px;
   position: relative; /* Needed for pseudo-element overlay */
 }
 
@@ -77,7 +77,7 @@ h1, h2, h3, p, label {
 /* Styles for the main title */
 .main-title {
   font-size: 1.8em; /* Reduced font size */
-  position: sticky;
+  position: fixed;
   top: 0;
   left: 0; /* Ensure it aligns to the left for width calculation */
   z-index: 1001; /* Above total-moves-tracker */

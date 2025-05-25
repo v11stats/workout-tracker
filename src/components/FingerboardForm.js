@@ -6,6 +6,7 @@ const FingerboardForm = ({ onFingerboardDataUpdate }) => {
     id: i,
     weight: 0,
     duration: 8, // Pre-populate with 8 seconds
+    edgeSize: '10mm', // Default edge size
   }));
 
   const [sets, setSets] = useState(initialSets);
@@ -16,15 +17,17 @@ const FingerboardForm = ({ onFingerboardDataUpdate }) => {
   }, [sets, weightedPulls, onFingerboardDataUpdate]);
 
   const handleChange = (setId, field, value) => {
-    let numericValue = Number(value);
+    let processedValue = value;
     if (field === 'weight' || field === 'duration') {
-      if (numericValue < 0) {
-        numericValue = 0;
+      processedValue = Number(value);
+      if (processedValue < 0) {
+        processedValue = 0;
       }
     }
+    // For edgeSize, value is used directly as it's a string '6mm', '8mm', or '10mm'
     setSets(prevSets =>
       prevSets.map(set =>
-        set.id === setId ? { ...set, [field]: numericValue } : set
+        set.id === setId ? { ...set, [field]: processedValue } : set
       )
     );
   };
@@ -62,6 +65,21 @@ const FingerboardForm = ({ onFingerboardDataUpdate }) => {
               value={set.duration}
               onChange={e => handleChange(set.id, 'duration', e.target.value)}
             />
+          </div>
+          <div className="form-field edge-size-group">
+            <span className="edge-size-label">Edge Size:</span>
+            {['6mm', '8mm', '10mm'].map(size => (
+              <label key={size} className="radio-label">
+                <input
+                  type="radio"
+                  name={`edge-size-${set.id}`}
+                  value={size}
+                  checked={set.edgeSize === size}
+                  onChange={e => handleChange(set.id, 'edgeSize', e.target.value)}
+                />
+                {size}
+              </label>
+            ))}
           </div>
         </div>
       ))}

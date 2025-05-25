@@ -15,12 +15,19 @@ const PhaseTracker = ({ phase, onPhaseComplete, totalMoves, onFingerboardDataCha
     if (phase === 0) {
       return (
         <div>
-          <h2>Warm-up Phase</h2>
+          <h2>Stretching and Easy Climbing Phase</h2>
+          <p>Focus on dynamic stretches and light movement. Remember to listen to your body.</p>
+        </div>
+      );
+    } else if (phase === 1) {
+      return (
+        <div>
+          <h2>Hangboard Phase</h2>
           {/* Pass onFingerboardDataChange with the correct prop name expected by FingerboardForm */}
           <FingerboardForm onFingerboardDataUpdate={onFingerboardDataChange} />
         </div>
       );
-    } else if (phase === 1) {
+    } else if (phase === 2) {
       return (
         <div>
           {/* Display totalMoves in the header */}
@@ -56,7 +63,7 @@ const PhaseTracker = ({ phase, onPhaseComplete, totalMoves, onFingerboardDataCha
           </div>
         </div>
       );
-    } else if (phase === 2) {
+    } else if (phase === 3) {
       return (
         <div>
           <h2>Rehab Phase</h2>
