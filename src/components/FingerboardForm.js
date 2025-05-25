@@ -4,7 +4,7 @@ import './FingerboardForm.css';
 const FingerboardForm = ({ onFingerboardDataUpdate }) => {
   const initialSets = Array.from({ length: 6 }, (_, i) => ({
     id: i,
-    weight: 0,
+    weight: '', // Changed from 0 to ''
     duration: 8, // Pre-populate with 8 seconds
     edgeSize: '10mm', // Default edge size
   }));
@@ -54,11 +54,7 @@ const FingerboardForm = ({ onFingerboardDataUpdate }) => {
               min="0"
               value={set.weight}
               onChange={e => handleChange(set.id, 'weight', e.target.value)}
-              onFocus={e => {
-                if (e.target.value === '0') {
-                  e.target.value = '';
-                }
-              }}
+              placeholder="e.g., 10" // Added placeholder
             />
           </div>
           <div className="form-field">
