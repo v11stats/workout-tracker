@@ -54,6 +54,11 @@ const FingerboardForm = ({ onFingerboardDataUpdate }) => {
               min="0"
               value={set.weight}
               onChange={e => handleChange(set.id, 'weight', e.target.value)}
+              onFocus={e => {
+                if (e.target.value === '0') {
+                  e.target.value = '';
+                }
+              }}
             />
           </div>
           <div className="form-field">
@@ -66,7 +71,7 @@ const FingerboardForm = ({ onFingerboardDataUpdate }) => {
               onChange={e => handleChange(set.id, 'duration', e.target.value)}
             />
           </div>
-          <div className="form-field edge-size-group">
+          <div className="form-field edge-size-options">
             <span className="edge-size-label">Edge Size:</span>
             {['6mm', '8mm', '10mm'].map(size => (
               <label key={size} className="radio-label">

@@ -54,3 +54,23 @@
 .form-field input[type="number"] {
   -moz-appearance: textfield; /* Firefox */
 }
+
+/* Styles for the Edge Size option group */
+.edge-size-options {
+  display: flex;
+  flex-direction: row; /* Align items in a row */
+  align-items: center; /* Vertically align items in the center */
+  gap: 10px; /* Space between radio buttons */
+}
+
+.edge-size-options .radio-label {
+  display: flex;
+  align-items: center;
+  gap: 5px; /* Space between radio button and its label */
+  font-size: 0.9em; /* Slightly reduce font size if needed */
+  padding: 5px; /* Adjust padding to prevent overflow */
+}
+
+.edge-size-options input[type="radio"] {
+  margin: 0; /* Remove default margins */
+}
