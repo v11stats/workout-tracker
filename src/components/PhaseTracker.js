@@ -3,7 +3,7 @@ import Counter from './Counter';
 import FingerboardForm from './FingerboardForm';
 
 // Removed setTotalMoves from props, added handleClimbingStatUpdate
-const PhaseTracker = ({ phase, onPhaseComplete, totalMoves, onFingerboardDataChange, handleClimbingStatUpdate }) => {
+const PhaseTracker = ({ phase, onPhaseComplete, totalMoves, onFingerboardDataChange, handleClimbingStatUpdate, onSaveDataForUser }) => {
 
   const handleComplete = () => {
     onPhaseComplete();
@@ -69,6 +69,15 @@ const PhaseTracker = ({ phase, onPhaseComplete, totalMoves, onFingerboardDataCha
           <h2>Rehab Phase</h2>
           {/* Rehab counter remains self-contained or could be connected to a new state if needed */}
           <Counter label="Rehab Sets" increment={1} buttonClassName="climbing-action-button" />
+          {/* Add the new buttons here */}
+          <div style={{ marginTop: '20px' }}>
+            <button onClick={() => onSaveDataForUser('Mike')} className="button" style={{ marginRight: '10px' }}>
+              Add-Mike
+            </button>
+            <button onClick={() => onSaveDataForUser('Patti')} className="button">
+              Add-Patti
+            </button>
+          </div>
         </div>
       );
     }

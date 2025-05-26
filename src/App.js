@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from './supabaseClient'; // Import Supabase client
 import PhaseTracker from './components/PhaseTracker';
 import { formatTime } from './components/Timer'; // Correctly import formatTime
 import './App.css';
@@ -195,6 +196,128 @@ function App() {
 
   // Removed the local formatGlobalTime function, as we now use the imported formatTime
 
+  const saveWorkoutData = async (userName) => {
+    try {
+      // 1. Fetch user_id from Supabase
+      let { data: users, error: userError } = await supabase
+        .from('users')
+        .select('user_id')
+        .eq('name', userName)
+        .single();
+
+      if (userError || !users) {
+        console.error('Error fetching user or user not found:', userError);
+        alert(`Error finding user ${userName}. Data not saved.`);
+        return;
+      }
+      const userId = users.user_id;
+
+      // 2. Prepare session data
+      const sessionStartTime = new Date(workoutStartTime).toISOString();
+      const sessionEndTime = new Date().toISOString(); // Current time as end time
+
+      // 3. Insert into workout_sessions
+      const { data: session, error: sessionError } = await supabase
+        .from('workout_sessions')
+        .insert([
+          { user_id: userId, start_time: sessionStartTime, end_time: sessionEndTime }
+        ])
+        .select()
+        .single();
+
+      if (sessionError || !session) {
+        console.error('Error inserting workout session:', sessionError);
+        alert('Error saving workout session. Data not fully saved.');
+        return;
+      }
+      const sessionId = session.session_id;
+
+      // 4. Prepare workout_data entries
+      const dataToInsert = [];
+
+      // Durations
+      Object.entries(durations).forEach(([phaseName, duration]) => {
+        if (duration > 0) { // Only save if duration is tracked
+          dataToInsert.push({
+            session_id: sessionId,
+            category: phaseName, // 'stretching', 'hangboard', 'climbing', 'rehab'
+            variable_name: 'duration',
+            value: duration.toString(),
+            unit: 'seconds'
+          });
+        }
+      });
+
+      // Total Moves (Climbing)
+      if (totalMoves > 0) {
+        dataToInsert.push({
+          session_id: sessionId,
+          category: 'climbing',
+          variable_name: 'total_moves',
+          value: totalMoves.toString(),
+          unit: 'moves'
+        });
+      }
+
+      // Climbing Stats
+      Object.entries(climbingStats).forEach(([key, count]) => {
+        const [grade, type] = key.split('_');
+        dataToInsert.push({
+          session_id: sessionId,
+          category: 'climbing_stats',
+          variable_name: `${grade}_${type}`,
+          value: count.toString(),
+          unit: 'count'
+        });
+      });
+
+      // Fingerboard Data - Hangboard Sets
+      if (fingerboardData && fingerboardData.hangboardSets) {
+        fingerboardData.hangboardSets.forEach((set, index) => {
+          if (set.weight !== '' || set.duration !== '') { // Only save if there's data
+            dataToInsert.push({ session_id: sessionId, category: 'hangboard_sets', variable_name: `set_${index + 1}_weight`, value: set.weight.toString(), unit: 'lbs' });
+            dataToInsert.push({ session_id: sessionId, category: 'hangboard_sets', variable_name: `set_${index + 1}_duration`, value: set.duration.toString(), unit: 'seconds' });
+            dataToInsert.push({ session_id: sessionId, category: 'hangboard_sets', variable_name: `set_${index + 1}_edge_size`, value: set.edgeSize, unit: 'mm' });
+          }
+        });
+      }
+
+      // Fingerboard Data - Weighted Pulls
+      if (fingerboardData && fingerboardData.weightedPulls) {
+        if (fingerboardData.weightedPulls.weight !== '') {
+          dataToInsert.push({ session_id: sessionId, category: 'hangboard_pulls', variable_name: 'weight', value: fingerboardData.weightedPulls.weight.toString(), unit: 'lbs' });
+        }
+        if (fingerboardData.weightedPulls.reps !== '') {
+          dataToInsert.push({ session_id: sessionId, category: 'hangboard_pulls', variable_name: 'reps', value: fingerboardData.weightedPulls.reps.toString(), unit: 'reps' });
+        }
+      }
+      
+      // Add other specific data points if necessary (e.g. Rehab sets if tracked in App.js state)
+
+      // 5. Insert into workout_data
+      if (dataToInsert.length > 0) {
+        const { error: dataError } = await supabase
+          .from('workout_data')
+          .insert(dataToInsert);
+
+        if (dataError) {
+          console.error('Error inserting workout data:', dataError);
+          alert('Error saving detailed workout data.');
+          return;
+        }
+      }
+
+      alert(`Workout data saved for ${userName}!`);
+      // Optionally, reset app state or navigate away after saving
+      // resetAppStates(); 
+      // setPhase(0); // Go to initial phase or a dedicated "thank you" screen
+
+    } catch (error) {
+      console.error('Unexpected error in saveWorkoutData:', error);
+      alert('An unexpected error occurred while saving data.');
+    }
+  };
+
   return (
     <div className="app">
       <h1 className="main-title">Workout Tracker {workoutStartTime !== null ? formatTime(totalElapsedTime) : ""}</h1>
@@ -219,6 +342,7 @@ function App() {
               onPhaseComplete={handleNextPhase}
               onFingerboardDataChange={handleFingerboardUpdate}
               handleClimbingStatUpdate={handleClimbingStatUpdate}
+              onSaveDataForUser={saveWorkoutData} // Add this prop
             />
           ) : (
             <div className="summary">
