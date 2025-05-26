@@ -59,8 +59,9 @@
 .edge-size-options {
   display: flex;
   flex-direction: row; /* Align items in a row */
+  flex-wrap: wrap; /* Allow items to wrap to the next line */
   align-items: center; /* Vertically align items in the center */
-  gap: 10px; /* Space between radio buttons */
+  gap: 8px; /* Slightly reduced gap between radio buttons */
 }
 
 .edge-size-options .radio-label {
