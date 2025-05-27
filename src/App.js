@@ -158,7 +158,8 @@ function App() {
     if (fingerboardData && fingerboardData.hangboardSets && fingerboardData.hangboardSets.length > 0) {
       csvContent += "Hangboard Sets Data\n"; // Changed title for clarity
       csvContent += "Set,Weight (lbs),Duration (s),Edge Size\n";
-      fingerboardData.hangboardSets.forEach((set, index) => {
+      const filteredHangboardSets = fingerboardData.hangboardSets.filter(set => set.weight !== '' && Number(set.weight) >= 0);
+      filteredHangboardSets.forEach((set, index) => {
         csvContent += `${index + 1},${set.weight},${set.duration},${set.edgeSize}\n`;
       });
     } else {
@@ -273,12 +274,12 @@ function App() {
 
       // Fingerboard Data - Hangboard Sets
       if (fingerboardData && fingerboardData.hangboardSets) {
-        fingerboardData.hangboardSets.forEach((set, index) => {
-          if (set.weight !== '' || set.duration !== '') { // Only save if there's data
-            dataToInsert.push({ session_id: sessionId, category: 'hangboard_sets', variable_name: `set_${index + 1}_weight`, value: set.weight.toString(), unit: 'lbs' });
-            dataToInsert.push({ session_id: sessionId, category: 'hangboard_sets', variable_name: `set_${index + 1}_duration`, value: set.duration.toString(), unit: 'seconds' });
-            dataToInsert.push({ session_id: sessionId, category: 'hangboard_sets', variable_name: `set_${index + 1}_edge_size`, value: set.edgeSize, unit: 'mm' });
-          }
+        const filteredHangboardSets = fingerboardData.hangboardSets.filter(set => set.weight !== '' && Number(set.weight) >= 0);
+        filteredHangboardSets.forEach((set, index) => {
+          // If a set is in filteredHangboardSets, its weight is valid. Save all its attributes.
+          dataToInsert.push({ session_id: sessionId, category: 'hangboard_sets', variable_name: `set_${index + 1}_weight`, value: set.weight.toString(), unit: 'lbs' });
+          dataToInsert.push({ session_id: sessionId, category: 'hangboard_sets', variable_name: `set_${index + 1}_duration`, value: set.duration.toString(), unit: 'seconds' });
+          dataToInsert.push({ session_id: sessionId, category: 'hangboard_sets', variable_name: `set_${index + 1}_edge_size`, value: set.edgeSize, unit: 'mm' });
         });
       }
 
@@ -342,7 +343,6 @@ function App() {
               onPhaseComplete={handleNextPhase}
               onFingerboardDataChange={handleFingerboardUpdate}
               handleClimbingStatUpdate={handleClimbingStatUpdate}
-              onSaveDataForUser={saveWorkoutData} // Add this prop
             />
           ) : (
             <div className="summary">
@@ -373,9 +373,11 @@ function App() {
               <h3>Hangboard Sets</h3>
               {fingerboardData && fingerboardData.hangboardSets && fingerboardData.hangboardSets.length > 0 ? (
                 <ul>
-                  {fingerboardData.hangboardSets.map((set) => ( // Removed index as set.id should be unique if available from form
-                    <li key={set.id}> {/* Assuming set objects have a unique id */}
-                      Set {set.id + 1}: {set.weight} lbs, {set.duration} secs, Edge: {set.edgeSize}
+                  {fingerboardData.hangboardSets
+                    .filter(set => set.weight !== '' && Number(set.weight) >= 0)
+                    .map((set, index) => ( // Added index for key and display consistency after filtering
+                    <li key={set.id !== undefined ? set.id : index}> {/* Use set.id if available, otherwise index */}
+                      Set {set.id !== undefined ? set.id + 1 : index + 1}: {set.weight} lbs, {set.duration} secs, Edge: {set.edgeSize}
                     </li>
                   ))}
                 </ul>
@@ -397,6 +399,14 @@ function App() {
               <button onClick={handleEmailSummary} className="button" style={{ marginTop: '20px', fontSize: '1em' }}>
                 Email Summary
               </button>
+              <div style={{ marginTop: '20px' }}>
+                <button onClick={() => saveWorkoutData('Mike')} className="button" style={{ marginRight: '10px' }}>
+                  Add-Mike
+                </button>
+                <button onClick={() => saveWorkoutData('Patti')} className="button">
+                  Add-Patti
+                </button>
+              </div>
             </div>
           )}
         </>
