@@ -373,9 +373,11 @@ function App() {
               <h3>Hangboard Sets</h3>
               {fingerboardData && fingerboardData.hangboardSets && fingerboardData.hangboardSets.length > 0 ? (
                 <ul>
-                  {fingerboardData.hangboardSets.map((set) => ( // Removed index as set.id should be unique if available from form
-                    <li key={set.id}> {/* Assuming set objects have a unique id */}
-                      Set {set.id + 1}: {set.weight} lbs, {set.duration} secs, Edge: {set.edgeSize}
+                  {fingerboardData.hangboardSets
+                    .filter(set => set.weight !== '' && Number(set.weight) >= 0)
+                    .map((set, index) => ( // Added index for key and display consistency after filtering
+                    <li key={set.id !== undefined ? set.id : index}> {/* Use set.id if available, otherwise index */}
+                      Set {set.id !== undefined ? set.id + 1 : index + 1}: {set.weight} lbs, {set.duration} secs, Edge: {set.edgeSize}
                     </li>
                   ))}
                 </ul>
