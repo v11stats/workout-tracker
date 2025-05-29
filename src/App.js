@@ -18,25 +18,38 @@ const PHASE_KEY = "appPhase"; // Key for storing phase in localStorage
 function App() {
   const [data, setData] = useState(null); // For API test data
   const [phase, setPhase] = useState(0);
-  const [durations, setDurations] = useState({ stretching: 0, hangboard: 0, climbing: 0, rehab: 0 });
+  const [durations, setDurations] = useState({ stretching: 0, hangboard: 0, climbing: 0, power_endurance: 0, rehab: 0 });
   const [totalMoves, setTotalMoves] = useState(0);
-  const [fingerboardData, setFingerboardData] = useState({ hangboardSets: [], weightedPulls: null });
+  const [fingerboardData, setFingerboardData] = useState({ hangboardSets: [], weightedPulls: [] });
   const [climbingStats, setClimbingStats] = useState({}); // New state for detailed climbing stats
+  const [powerEnduranceSetsData, setPowerEnduranceSetsData] = useState(
+    Array.from({ length: 3 }, () => ({ grade: '' }))
+  );
 
   const [workoutStartTime, setWorkoutStartTime] = useState(null);
   const [totalElapsedTime, setTotalElapsedTime] = useState(0);
   const [lastPhaseEndTimeSeconds, setLastPhaseEndTimeSeconds] = useState(0);
+  const [currentPhaseElapsedTime, setCurrentPhaseElapsedTime] = useState(0);
+
+  const formatTotalTime = (totalSeconds) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const paddedMins = minutes.toString().padStart(2, '0');
+    return `${hours}:${paddedMins}`;
+  };
 
   // Function to reset all relevant states to their initial values
   const resetAppStates = () => {
     setPhase(0);
     setWorkoutStartTime(null);
     setTotalElapsedTime(0);
-    setDurations({ stretching: 0, hangboard: 0, climbing: 0, rehab: 0 });
+    setCurrentPhaseElapsedTime(0); // Reset current phase time
+    setDurations({ stretching: 0, hangboard: 0, climbing: 0, power_endurance: 0, rehab: 0 });
     setLastPhaseEndTimeSeconds(0);
     setTotalMoves(0);
-    setFingerboardData({ hangboardSets: [], weightedPulls: null });
+    setFingerboardData({ hangboardSets: [], weightedPulls: [] });
     setClimbingStats({}); // Reset climbing stats
+    setPowerEnduranceSetsData(Array.from({ length: 3 }, () => ({ grade: '' }))); // Reset power endurance data
     // Also clear them from localStorage for a clean start next time (optional, phase is handled by its own effect)
     localStorage.removeItem(WORKOUT_START_TIME_KEY);
     // localStorage.setItem(PHASE_KEY, "0"); // Phase will be set by its own effect
@@ -47,7 +60,7 @@ function App() {
     const storedStartTime = localStorage.getItem(WORKOUT_START_TIME_KEY);
     const storedPhase = localStorage.getItem(PHASE_KEY);
 
-    if (storedPhase && parseInt(storedPhase, 10) === 4 && !storedStartTime) {
+    if (storedPhase && parseInt(storedPhase, 10) === 5 && !storedStartTime) { // Adjusted for new summary phase 5
       // If summary page was the last state and workout has ended (no start time)
       resetAppStates();
     } else if (storedStartTime) {
@@ -68,14 +81,17 @@ function App() {
   useEffect(() => {
     let intervalId;
 
-    if (workoutStartTime && phase < 4) {
+    if (workoutStartTime && phase < 5) { // Adjusted for new summary phase 5
       // Update elapsed time immediately when workoutStartTime is set or loaded,
       // and for subsequent updates as long as the phase is active.
-      setTotalElapsedTime(Math.floor((Date.now() - workoutStartTime) / 1000));
+      const updateTotalAndPhaseTimes = () => {
+        const nowSeconds = Math.floor((Date.now() - workoutStartTime) / 1000);
+        setTotalElapsedTime(nowSeconds);
+        setCurrentPhaseElapsedTime(nowSeconds - lastPhaseEndTimeSeconds);
+      };
+      updateTotalAndPhaseTimes(); // Initial call to set times immediately
 
-      intervalId = setInterval(() => {
-        setTotalElapsedTime(Math.floor((Date.now() - workoutStartTime) / 1000));
-      }, 1000);
+      intervalId = setInterval(updateTotalAndPhaseTimes, 1000);
     }
     // The cleanup function will clear the interval when the component unmounts
     // or before the effect runs again (e.g., if workoutStartTime or phase changes).
@@ -97,18 +113,21 @@ function App() {
     const currentPhaseDuration = totalElapsedTime - lastPhaseEndTimeSeconds;
     const currentPhaseValue = phase; // Capture current phase value before updating state
 
-    if (currentPhaseValue === 0) {
+    if (currentPhaseValue === 0) { // Stretching
       setDurations((d) => ({ ...d, stretching: currentPhaseDuration }));
-    } else if (currentPhaseValue === 1) {
+    } else if (currentPhaseValue === 1) { // Hangboard
       setDurations((d) => ({ ...d, hangboard: currentPhaseDuration }));
-    } else if (currentPhaseValue === 2) {
+    } else if (currentPhaseValue === 2) { // Climbing
       setDurations((d) => ({ ...d, climbing: currentPhaseDuration }));
-    } else if (currentPhaseValue === 3) { // Transitioning to phase 4 (summary)
+    } else if (currentPhaseValue === 3) { // Power Endurance
+      setDurations((d) => ({ ...d, power_endurance: currentPhaseDuration }));
+    } else if (currentPhaseValue === 4) { // Rehab, transitioning to phase 5 (summary)
       setDurations((d) => ({ ...d, rehab: currentPhaseDuration }));
       localStorage.removeItem(WORKOUT_START_TIME_KEY); // Clear workout start time
     }
     
     setLastPhaseEndTimeSeconds(totalElapsedTime);
+    setCurrentPhaseElapsedTime(0); // Reset current phase elapsed time for the new phase
 
     const nextPhaseValue = currentPhaseValue + 1;
     // Resetting when *entering* Climbing Phase (which is now phase 2)
@@ -137,11 +156,18 @@ function App() {
     setFingerboardData(data);
   };
 
+  const handlePowerEnduranceUpdate = (index, grade) => {
+    setPowerEnduranceSetsData(prevData =>
+      prevData.map((set, i) => (i === index ? { ...set, grade: grade } : set))
+    );
+  };
+
   const generateWorkoutCSV = () => {
     let csvContent = "Category,Value,Unit\n";
     csvContent += `Stretching Duration,${formatDurationSummary(durations.stretching)},duration\n`;
     csvContent += `Hangboard Duration,${formatDurationSummary(durations.hangboard)},duration\n`;
     csvContent += `Climbing Duration,${formatDurationSummary(durations.climbing)},duration\n`;
+    csvContent += `Power Endurance Duration,${formatDurationSummary(durations.power_endurance)},duration\n`;
     csvContent += `Rehab Duration,${formatDurationSummary(durations.rehab)},duration\n`;
     csvContent += `Total Workout Time,${formatTime(totalElapsedTime)},duration\n`;
     csvContent += `Total Moves (Climbing),${totalMoves},moves\n`; // Overall total moves
@@ -168,12 +194,38 @@ function App() {
 
     csvContent += "\n"; // Add a blank line before weighted pulls data
 
-    if (fingerboardData && fingerboardData.weightedPulls && (fingerboardData.weightedPulls.weight !== '' || fingerboardData.weightedPulls.reps !== '')) {
-      csvContent += "Weighted Pulls Data\n";
-      csvContent += `Weighted Pulls Weight,${fingerboardData.weightedPulls.weight !== '' ? fingerboardData.weightedPulls.weight : 'N/A'},lbs\n`;
-      csvContent += `Weighted Pulls Reps,${fingerboardData.weightedPulls.reps !== '' ? fingerboardData.weightedPulls.reps : 'N/A'},reps\n`;
+    if (fingerboardData && fingerboardData.weightedPulls && fingerboardData.weightedPulls.length > 0 && fingerboardData.weightedPulls.some(set => set.weight !== '' || set.reps !== '')) {
+      csvContent += "Weighted Pulls Sets Data\n"; // Changed title for clarity
+      csvContent += "Set,Type,Value,Unit\n"; // Added header for new structure
+      fingerboardData.weightedPulls.forEach((set, index) => {
+        const hasWeight = set.weight !== '' && !isNaN(Number(set.weight));
+        const hasReps = set.reps !== '' && !isNaN(Number(set.reps));
+
+        if (hasWeight || hasReps) {
+          if (hasWeight) {
+            csvContent += `Set ${index + 1},Weight,${set.weight},lbs\n`;
+          }
+          if (hasReps) {
+            csvContent += `Set ${index + 1},Reps,${set.reps},reps\n`;
+          }
+        }
+      });
     } else {
       csvContent += "No weighted pulls data recorded.\n";
+    }
+
+    csvContent += "\n"; // Add a blank line before power endurance data
+
+    if (powerEnduranceSetsData && powerEnduranceSetsData.some(set => set.grade !== '')) {
+      csvContent += "Power Endurance Climbs Data\n";
+      csvContent += "Set,Grade\n";
+      powerEnduranceSetsData.forEach((set, index) => {
+        if (set.grade !== '') {
+          csvContent += `Set ${index + 1},${set.grade}\n`;
+        }
+      });
+    } else {
+      csvContent += "No power endurance data recorded.\n";
     }
     return csvContent;
   };
@@ -191,6 +243,8 @@ function App() {
     resetAppStates(); // This will set phase to 0 and clear old data.
     // Then, set the new workout start time.
     setWorkoutStartTime(now);
+    setLastPhaseEndTimeSeconds(0); // Ensure this is reset for the first phase
+    setCurrentPhaseElapsedTime(0); // Ensure this is reset for the first phase
     localStorage.setItem(WORKOUT_START_TIME_KEY, now.toString());
     // Phase is already set to 0 by resetAppStates, and its effect will store it.
   };
@@ -284,14 +338,34 @@ function App() {
       }
 
       // Fingerboard Data - Weighted Pulls
-      if (fingerboardData && fingerboardData.weightedPulls) {
-        if (fingerboardData.weightedPulls.weight !== '') {
-          dataToInsert.push({ session_id: sessionId, category: 'hangboard_pulls', variable_name: 'weight', value: fingerboardData.weightedPulls.weight.toString(), unit: 'lbs' });
-        }
-        if (fingerboardData.weightedPulls.reps !== '') {
-          dataToInsert.push({ session_id: sessionId, category: 'hangboard_pulls', variable_name: 'reps', value: fingerboardData.weightedPulls.reps.toString(), unit: 'reps' });
-        }
+      if (fingerboardData && fingerboardData.weightedPulls && fingerboardData.weightedPulls.length > 0) {
+        fingerboardData.weightedPulls.forEach((set, index) => {
+          const hasWeight = set.weight !== '' && !isNaN(Number(set.weight));
+          const hasReps = set.reps !== '' && !isNaN(Number(set.reps));
+
+          if (hasWeight || hasReps) { // Only save if there's at least one valid field
+            if (hasWeight) {
+              dataToInsert.push({ session_id: sessionId, category: 'weighted_pulls_sets', variable_name: `set_${index + 1}_weight`, value: set.weight.toString(), unit: 'lbs' });
+            }
+            if (hasReps) {
+              dataToInsert.push({ session_id: sessionId, category: 'weighted_pulls_sets', variable_name: `set_${index + 1}_reps`, value: set.reps.toString(), unit: 'reps' });
+            }
+          }
+        });
       }
+
+      // Power Endurance Sets Data
+      powerEnduranceSetsData.forEach((set, index) => {
+        if (set.grade !== '') {
+          dataToInsert.push({
+            session_id: sessionId,
+            category: 'power_endurance_sets',
+            variable_name: `set_${index + 1}_grade`,
+            value: set.grade,
+            unit: 'grade' 
+          });
+        }
+      });
       
       // Add other specific data points if necessary (e.g. Rehab sets if tracked in App.js state)
 
@@ -321,7 +395,11 @@ function App() {
 
   return (
     <div className="app">
-      <h1 className="main-title">Workout Tracker {workoutStartTime !== null ? formatTime(totalElapsedTime) : ""}</h1>
+      <h1 className="main-title">
+        {workoutStartTime !== null 
+          ? `${formatTotalTime(totalElapsedTime)} | Phase ${formatTime(currentPhaseElapsedTime)}` 
+          : ""}
+      </h1>
       <h2>{data}</h2> {/* API test data display */}
 
       {workoutStartTime === null ? (
@@ -336,13 +414,15 @@ function App() {
       {/* Main content: PhaseTracker or Summary, only shown when workout has started */}
       {workoutStartTime !== null && (
         <>
-          {phase < 4 ? (
+          {phase < 5 ? ( // Adjusted for new summary phase 5
             <PhaseTracker
               phase={phase} // Only one phase prop needed
               totalMoves={totalMoves} // Pass totalMoves for display in PhaseTracker header
               onPhaseComplete={handleNextPhase}
               onFingerboardDataChange={handleFingerboardUpdate}
               handleClimbingStatUpdate={handleClimbingStatUpdate}
+              powerEnduranceSetsData={powerEnduranceSetsData} // Pass down state
+              handlePowerEnduranceUpdate={handlePowerEnduranceUpdate} // Pass down handler
             />
           ) : (
             <div className="summary">
@@ -350,12 +430,13 @@ function App() {
               <p>Stretching duration: {formatDurationSummary(durations.stretching)}</p>
               <p>Hangboard duration: {formatDurationSummary(durations.hangboard)}</p>
               <p>Climbing duration: {formatDurationSummary(durations.climbing)}</p>
+              <p>Power Endurance duration: {formatDurationSummary(durations.power_endurance)}</p>
               <p>Rehab duration: {formatDurationSummary(durations.rehab)}</p>
               <p>Total Workout Time (summary): {formatTime(totalElapsedTime)}</p>
               <p>Total Moves during Climbing Phase: {totalMoves}</p>
 
               {/* ADD CONSOLE LOG HERE */}
-              { phase === 4 && console.log("climbingStats before display:", climbingStats) }
+              { phase === 5 && console.log("climbingStats before display:", climbingStats) }
 
               {/* Display Detailed Climbing Stats */}
               <h3>Climbing Details</h3>
@@ -387,13 +468,42 @@ function App() {
 
               {/* Display Weighted Pulls Data */}
               <h3>Weighted Pulls</h3>
-              {fingerboardData && fingerboardData.weightedPulls && (fingerboardData.weightedPulls.weight !== '' || fingerboardData.weightedPulls.reps !== '') ? (
-                <p>
-                  Weight Added: {fingerboardData.weightedPulls.weight !== '' ? `${fingerboardData.weightedPulls.weight} lbs` : 'N/A'}, 
-                  Reps: {fingerboardData.weightedPulls.reps !== '' ? fingerboardData.weightedPulls.reps : 'N/A'}
-                </p>
+              {fingerboardData && fingerboardData.weightedPulls && fingerboardData.weightedPulls.some(set => set.weight !== '' || set.reps !== '') ? (
+                <ul>
+                  {fingerboardData.weightedPulls.map((set, index) => {
+                    if (set.weight !== '' || set.reps !== '') {
+                      return (
+                        <li key={index}>
+                          Set {index + 1}: 
+                          {set.weight !== '' ? ` Weight: ${set.weight} lbs` : ' Weight: N/A'}
+                          {set.reps !== '' ? `, Reps: ${set.reps}` : ', Reps: N/A'}
+                        </li>
+                      );
+                    }
+                    return null;
+                  })}
+                </ul>
               ) : (
                 <p>No weighted pulls data recorded.</p>
+              )}
+
+              {/* Display Power Endurance Sets Data */}
+              <h3>Power Endurance Climbs</h3>
+              {powerEnduranceSetsData && powerEnduranceSetsData.some(set => set.grade !== '') ? (
+                <ul>
+                  {powerEnduranceSetsData.map((set, index) => {
+                    if (set.grade !== '') {
+                      return (
+                        <li key={index}>
+                          Set {index + 1}: Grade: {set.grade}
+                        </li>
+                      );
+                    }
+                    return null;
+                  })}
+                </ul>
+              ) : (
+                <p>No power endurance data recorded.</p>
               )}
 
               <button onClick={handleEmailSummary} className="button" style={{ marginTop: '20px', fontSize: '1em' }}>

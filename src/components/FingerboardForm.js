@@ -10,7 +10,9 @@ const FingerboardForm = ({ onFingerboardDataUpdate }) => {
   }));
 
   const [sets, setSets] = useState(initialSets);
-  const [weightedPulls, setWeightedPulls] = useState({ weight: '', reps: '' });
+  const [weightedPulls, setWeightedPulls] = useState(
+    Array.from({ length: 4 }, () => ({ weight: '', reps: '' }))
+  );
 
   useEffect(() => {
     onFingerboardDataUpdate({ hangboardSets: sets, weightedPulls: weightedPulls });
@@ -32,12 +34,28 @@ const FingerboardForm = ({ onFingerboardDataUpdate }) => {
     );
   };
 
-  const handleWeightedPullsChange = (field, value) => {
-    let numericValue = Number(value);
-    if (numericValue < 0) {
-      numericValue = 0;
-    }
-    setWeightedPulls(prev => ({ ...prev, [field]: value === '' ? '' : numericValue }));
+  const handleWeightedPullsChange = (index, field, value) => {
+    setWeightedPulls(prevWeightedPulls =>
+      prevWeightedPulls.map((set, i) => {
+        if (i === index) {
+          let processedValue;
+          if (value === '') {
+            processedValue = '';
+          } else {
+            const numVal = Number(value);
+            if (isNaN(numVal)) {
+              processedValue = ''; // Default to empty string for invalid non-empty strings
+            } else if (numVal < 0) {
+              processedValue = 0;   // Ensure value is not negative
+            } else {
+              processedValue = numVal; // Store the valid number
+            }
+          }
+          return { ...set, [field]: processedValue };
+        }
+        return set;
+      })
+    );
   };
 
   return (
@@ -88,30 +106,33 @@ const FingerboardForm = ({ onFingerboardDataUpdate }) => {
       <hr className="form-divider" />
 
       <h4>Weighted Pulls</h4>
-      <div className="weighted-pulls-section">
-        <div className="form-field">
-          <label htmlFor="wp-weight">Weight Added (lbs):</label>
-          <input
-            type="number"
-            id="wp-weight"
-            min="0"
-            value={weightedPulls.weight}
-            placeholder="e.g., 10"
-            onChange={e => handleWeightedPullsChange('weight', e.target.value)}
-          />
+      {weightedPulls.map((set, index) => (
+        <div key={index} className="weighted-pulls-set">
+          <h5>Set {index + 1}</h5>
+          <div className="form-field">
+            <label htmlFor={`wp-weight-${index}`}>Weight Added (lbs):</label>
+            <input
+              type="number"
+              id={`wp-weight-${index}`}
+              min="0"
+              value={set.weight}
+              placeholder="e.g., 10"
+              onChange={e => handleWeightedPullsChange(index, 'weight', e.target.value)}
+            />
+          </div>
+          <div className="form-field">
+            <label htmlFor={`wp-reps-${index}`}>Number of Reps:</label>
+            <input
+              type="number"
+              id={`wp-reps-${index}`}
+              min="0"
+              value={set.reps}
+              placeholder="e.g., 5"
+              onChange={e => handleWeightedPullsChange(index, 'reps', e.target.value)}
+            />
+          </div>
         </div>
-        <div className="form-field">
-          <label htmlFor="wp-reps">Number of Reps:</label>
-          <input
-            type="number"
-            id="wp-reps"
-            min="0"
-            value={weightedPulls.reps}
-            placeholder="e.g., 5"
-            onChange={e => handleWeightedPullsChange('reps', e.target.value)}
-          />
-        </div>
-      </div>
+      ))}
     </form>
   );
 };
