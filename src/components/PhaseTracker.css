@@ -1,0 +1,23 @@
+/* Styles for PhaseTracker component */
+
+.power-endurance-sets {
+  margin-top: 15px;
+}
+
+.power-endurance-set-input {
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.power-endurance-set-input label {
+  margin-right: 10px;
+  font-weight: bold;
+}
+
+.power-endurance-set-input input[type="text"] {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1em;
+}

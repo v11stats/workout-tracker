@@ -1,9 +1,18 @@
 import React from 'react'; // Removed useEffect, useState
 import Counter from './Counter';
 import FingerboardForm from './FingerboardForm';
+import './PhaseTracker.css'; // Assuming you might want to add specific styles
 
-// Removed setTotalMoves from props, added handleClimbingStatUpdate
-const PhaseTracker = ({ phase, onPhaseComplete, totalMoves, onFingerboardDataChange, handleClimbingStatUpdate }) => {
+// Added powerEnduranceSetsData and handlePowerEnduranceUpdate to props
+const PhaseTracker = ({ 
+  phase, 
+  onPhaseComplete, 
+  totalMoves, 
+  onFingerboardDataChange, 
+  handleClimbingStatUpdate,
+  powerEnduranceSetsData, // New prop
+  handlePowerEnduranceUpdate // New prop
+}) => {
 
   const handleComplete = () => {
     onPhaseComplete();
@@ -63,7 +72,28 @@ const PhaseTracker = ({ phase, onPhaseComplete, totalMoves, onFingerboardDataCha
           </div>
         </div>
       );
-    } else if (phase === 3) {
+    } else if (phase === 3) { // New Power Endurance Phase
+      return (
+        <div>
+          <h2>Power Endurance Climbs</h2>
+          <p>Record the grade for each of your 3 power endurance sets.</p>
+          <div className="power-endurance-sets">
+            {powerEnduranceSetsData.map((set, index) => (
+              <div key={index} className="power-endurance-set-input">
+                <label htmlFor={`pe-grade-${index}`}>Set {index + 1} Grade:</label>
+                <input
+                  type="text"
+                  id={`pe-grade-${index}`}
+                  placeholder="Enter grade (e.g., V5)"
+                  value={set.grade}
+                  onChange={(e) => handlePowerEnduranceUpdate(index, e.target.value)}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    } else if (phase === 4) { // Adjusted Rehab Phase
       return (
         <div>
           <h2>Rehab Phase</h2>
