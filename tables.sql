@@ -20,7 +20,7 @@ CREATE TABLE workout_data (
     session_id UUID NOT NULL REFERENCES workout_sessions(session_id),
     category TEXT NOT NULL,
     variable_name TEXT NOT NULL,
-    value TEXT NOT NULL,
+    value INTEGER NOT NULL, -- Changed TEXT to INTEGER
     unit TEXT,
     created_at TIMESTAMPZ DEFAULT now()
 );

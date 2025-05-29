@@ -6,7 +6,7 @@ const FingerboardForm = ({ onFingerboardDataUpdate }) => {
     id: i,
     weight: '', // Changed from 0 to ''
     duration: 8, // Pre-populate with 8 seconds
-    edgeSize: '10mm', // Default edge size
+    edgeSize: 10, // Default edge size (now a number)
   }));
 
   const [sets, setSets] = useState(initialSets);
@@ -25,8 +25,10 @@ const FingerboardForm = ({ onFingerboardDataUpdate }) => {
       if (processedValue < 0) {
         processedValue = 0;
       }
+    } else if (field === 'edgeSize') {
+      processedValue = parseInt(value, 10); // Convert string value to number
     }
-    // For edgeSize, value is used directly as it's a string '6mm', '8mm', or '10mm'
+    // Note: edgeSize is now handled as a number
     setSets(prevSets =>
       prevSets.map(set =>
         set.id === setId ? { ...set, [field]: processedValue } : set
@@ -87,18 +89,21 @@ const FingerboardForm = ({ onFingerboardDataUpdate }) => {
           </div>
           <div className="form-field edge-size-options">
             <span className="edge-size-label">Edge Size:</span>
-            {['6mm', '8mm', '10mm'].map(size => (
-              <label key={size} className="radio-label">
-                <input
-                  type="radio"
-                  name={`edge-size-${set.id}`}
-                  value={size}
-                  checked={set.edgeSize === size}
-                  onChange={e => handleChange(set.id, 'edgeSize', e.target.value)}
-                />
-                {size}
-              </label>
-            ))}
+            {['6mm', '8mm', '10mm'].map(sizeStr => {
+              const numericSize = parseInt(sizeStr, 10);
+              return (
+                <label key={sizeStr} className="radio-label">
+                  <input
+                    type="radio"
+                    name={`edge-size-${set.id}`}
+                    value={numericSize} // Use numeric value for the input
+                    checked={set.edgeSize === numericSize} // Compare with numeric state value
+                    onChange={e => handleChange(set.id, 'edgeSize', e.target.value)}
+                  />
+                  {sizeStr} {/* Display string like "10mm" */}
+                </label>
+              );
+            })}
           </div>
         </div>
       ))}

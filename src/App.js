@@ -333,7 +333,7 @@ function App() {
           // If a set is in filteredHangboardSets, its weight is valid. Save all its attributes.
           dataToInsert.push({ session_id: sessionId, category: 'hangboard_sets', variable_name: `set_${index + 1}_weight`, value: set.weight.toString(), unit: 'lbs' });
           dataToInsert.push({ session_id: sessionId, category: 'hangboard_sets', variable_name: `set_${index + 1}_duration`, value: set.duration.toString(), unit: 'seconds' });
-          dataToInsert.push({ session_id: sessionId, category: 'hangboard_sets', variable_name: `set_${index + 1}_edge_size`, value: set.edgeSize, unit: 'mm' });
+          dataToInsert.push({ session_id: sessionId, category: 'hangboard_sets', variable_name: `set_${index + 1}_edge_size`, value: set.edgeSize.toString(), unit: 'mm' });
         });
       }
 
@@ -458,7 +458,7 @@ function App() {
                     .filter(set => set.weight !== '' && Number(set.weight) >= 0)
                     .map((set, index) => ( // Added index for key and display consistency after filtering
                     <li key={set.id !== undefined ? set.id : index}> {/* Use set.id if available, otherwise index */}
-                      Set {set.id !== undefined ? set.id + 1 : index + 1}: {set.weight} lbs, {set.duration} secs, Edge: {set.edgeSize}
+                      Set {set.id !== undefined ? set.id + 1 : index + 1}: {set.weight} lbs, {set.duration} secs, Edge: {set.edgeSize}mm
                     </li>
                   ))}
                 </ul>
