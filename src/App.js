@@ -513,19 +513,36 @@ function App() {
 
     // Original logic to get internal user_id based on name:
     setDebugMessage(prev => `${prev} | Fetching user entry for '${userName}' from public.users...`);
-    let { data: usersTableEntry, error: userFetchError } = await supabase
+    // Changed from .single() to a normal select to debug the 406 error.
+    // .single() throws an error if 0 rows are returned by RLS, which can be misleading.
+    let { data: users, error: userFetchError } = await supabase
       .from('users')
       .select('user_id, name') // Select name for confirmation
-      .eq('name', userName) // Fetching based on "Mike" or "Patti"
-      .single();
+      .eq('name', userName); // Fetching based on "Mike" or "Patti"
 
-    if (userFetchError || !usersTableEntry) {
-      const errorMsg = `Error finding user '${userName}' in users table. Data not saved. Make sure a row with name '${userName}' exists.`;
+    if (userFetchError) {
+      const errorMsg = `API error fetching user '${userName}': ${userFetchError.message}. Check RLS policy on 'users' table.`;
       setDebugMessage(`Error: ${errorMsg}`);
       console.error(`Error fetching user '${userName}' from public.users table:`, userFetchError);
-      alert(`${errorMsg} RLS might be blocking this read if not authenticated properly.`);
+      alert(errorMsg);
       return;
     }
+
+    if (!users || users.length === 0) {
+      const errorMsg = `No user entry found for '${userName}' in 'users' table. RLS is likely preventing access. Ensure the SELECT policy on 'public.users' allows the authenticated user to see their own row.`;
+      setDebugMessage(`Error: ${errorMsg}`);
+      alert(errorMsg);
+      return;
+    }
+
+    if (users.length > 1) {
+      const errorMsg = `Multiple users found with name '${userName}'. Data not saved for safety.`;
+      setDebugMessage(`Error: ${errorMsg}`);
+      alert(errorMsg);
+      return;
+    }
+
+    const usersTableEntry = users[0];
 
     // CRITICAL CHECK: The user_id from your public.users table for "Mike" or "Patti"
     // MUST match the currentAuthUserId (the Supabase Auth UID for the programmatically logged-in user).
@@ -710,9 +727,13 @@ function App() {
         zIndex: 1000,
         borderBottom: '2px solid #61dafb',
         fontSize: '0.9em',
-        fontFamily: 'monospace'
+        fontFamily: 'monospace',
+        minHeight: '40px', // Ensure it has some height
+        whiteSpace: 'pre-wrap', // Allow text to wrap
+        wordBreak: 'break-word' // Break long words or strings
       }}>
-        <strong>Debug Info:</strong> {debugMessage}
+        <strong>Debug Info:</strong>
+        <p style={{ margin: 0 }}>{debugMessage}</p>
       </div>
       <h1 className="main-title" style={{ marginTop: '50px' }}> {/* Added margin to avoid overlap with debug bar */}
         {workoutStartTime !== null 
