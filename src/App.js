@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabaseClient'; // Import Supabase client
 import PhaseTracker from './components/PhaseTracker';
 import EditableSummaryField from './components/EditableSummaryField'; // Import new component
@@ -57,7 +57,67 @@ const parseTotalTimeSummary = (timeString) => {
 const WORKOUT_START_TIME_KEY = "workoutStartTime";
 const PHASE_KEY = "appPhase"; // Key for storing phase in localStorage
 
+// Store credentials in a more manageable way, still client-side
+const USER_CREDENTIALS = {
+  Mike: { email: 'mike-app-user@example.com', password: 'PearWiggleTrunkSeven47' },
+  Patti: { email: 'patti-app-user@example.com', password: 'CrotchTrouserPostcard505' },
+};
+
+let currentProgrammaticUser = null; // Keep track of who is programmatically logged in
+
+async function ensureUserLoggedIn(userName, setDebugMessage) { // Accept the debug setter
+  setDebugMessage(`Ensuring login for ${userName}.`);
+  if (!USER_CREDENTIALS[userName]) {
+    const errorMsg = `No credentials found for user ${userName}`;
+    setDebugMessage(`Error: ${errorMsg}`);
+    console.error(errorMsg);
+    alert(`Configuration error: No credentials for ${userName}.`);
+    return false;
+  }
+
+  const { data: { user: activeUser } } = await supabase.auth.getUser();
+
+  if (activeUser && activeUser.email === USER_CREDENTIALS[userName].email) {
+    setDebugMessage(`${userName} is already logged in.`);
+    console.log(`${userName} is already logged in programmatically.`);
+    currentProgrammaticUser = userName;
+    return true; // Correct user is already logged in
+  }
+
+  // If a different user is logged in, or no one is, sign out first
+  if (activeUser) {
+    setDebugMessage(`Logging out ${activeUser.email} to switch to ${userName}.`);
+    console.log(`Logging out current user: ${activeUser.email} before switching to ${userName}`);
+    await supabase.auth.signOut();
+    currentProgrammaticUser = null;
+  }
+
+  setDebugMessage(`Attempting programmatic login for ${userName}...`);
+  console.log(`Attempting programmatic login for ${userName}...`);
+  const { email, password } = USER_CREDENTIALS[userName];
+  const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (loginError) {
+    const errorMsg = `Login error for ${userName}: ${loginError.message}`;
+    setDebugMessage(`Error: ${errorMsg}`);
+    console.error(`Programmatic login error for ${userName}:`, loginError);
+    alert(`Failed to prepare session for ${userName}. Data not saved. Error: ${loginError.message}`);
+    return false;
+  }
+
+  if (loginData.user) {
+    setDebugMessage(`Login successful for ${userName}. UID: ${loginData.user.id}`);
+    console.log(`Programmatic login successful for ${userName}. User ID: ${loginData.user.id}`);
+    currentProgrammaticUser = userName;
+    // Store the session. Supabase client does this automatically by default.
+    // You might want to explicitly handle session persistence if needed beyond default.
+  }
+  return true;
+}
+
+
 function App() {
+  const [debugMessage, setDebugMessage] = useState('App loaded. No actions yet.'); // Debug UI state
   const [data, setData] = useState(null); // For API test data
   const [phase, setPhase] = useState(0);
   const [durations, setDurations] = useState({ stretching: 0, hangboard: 0, climbing: 0, power_endurance: 0, rehab: 0 });
@@ -420,7 +480,72 @@ function App() {
     localStorage.setItem(WORKOUT_START_TIME_KEY, now.toString());
   };
 
-  const saveWorkoutData = async (userName) => {
+  const saveWorkoutData = async (userName) => { // userName is "Mike" or "Patti"
+    setDebugMessage(`Starting save process for ${userName}...`);
+    const loggedIn = await ensureUserLoggedIn(userName, setDebugMessage); // Pass setter to the function
+    if (!loggedIn) {
+      setDebugMessage(prev => `${prev} | Save process halted due to login failure.`);
+      console.log(`Skipping save for ${userName} due to login failure.`);
+      return;
+    }
+
+    // At this point, the correct user (Mike or Patti) should be programmatically logged in.
+    // Their auth.uid() will be used by RLS.
+
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (!currentUser) {
+        const errorMsg = "No authenticated user found after login attempt. Cannot save data.";
+        setDebugMessage(errorMsg);
+        alert(errorMsg);
+        console.error("SaveWorkoutData: No authenticated user found after ensureUserLoggedIn.");
+        return;
+    }
+    const currentAuthUserId = currentUser.id; // This is the auth.uid() of Mike or Patti
+
+    // Now, we need to ensure the `user_id` in our `public.users` table matches this `currentAuthUserId`.
+    // The RLS policies on `workout_sessions` and `workout_data` are:
+    // `USING ( (select auth.uid()) = user_id )` for `workout_sessions` (where user_id is the FK to public.users)
+    // `USING ( (select auth.uid()) = (SELECT user_id FROM workout_sessions WHERE session_id = workout_data.session_id) )` for `workout_data`
+
+    // This means the `user_id` column in your `public.workout_sessions` table MUST BE the Supabase Auth UID.
+    // Let's verify if your `public.users` table stores these Auth UIDs.
+    // If `public.users.user_id` is NOT the auth UID, the RLS policies will fail.
+
+    // Original logic to get internal user_id based on name:
+    setDebugMessage(prev => `${prev} | Fetching user entry for '${userName}' from public.users...`);
+    let { data: usersTableEntry, error: userFetchError } = await supabase
+      .from('users')
+      .select('user_id, name') // Select name for confirmation
+      .eq('name', userName) // Fetching based on "Mike" or "Patti"
+      .single();
+
+    if (userFetchError || !usersTableEntry) {
+      const errorMsg = `Error finding user '${userName}' in users table. Data not saved. Make sure a row with name '${userName}' exists.`;
+      setDebugMessage(`Error: ${errorMsg}`);
+      console.error(`Error fetching user '${userName}' from public.users table:`, userFetchError);
+      alert(`${errorMsg} RLS might be blocking this read if not authenticated properly.`);
+      return;
+    }
+
+    // CRITICAL CHECK: The user_id from your public.users table for "Mike" or "Patti"
+    // MUST match the currentAuthUserId (the Supabase Auth UID for the programmatically logged-in user).
+    if (usersTableEntry.user_id !== currentAuthUserId) {
+        const errorMsg = `Data integrity error: User ID in 'users' table (${usersTableEntry.user_id}) does not match Auth UID (${currentAuthUserId}).`;
+        setDebugMessage(`Error: ${errorMsg}`);
+        console.error(`Mismatch between public.users.user_id (${usersTableEntry.user_id} for ${userName}) and auth.uid (${currentAuthUserId}).`);
+        alert(`Data integrity issue: The user ID for ${userName} in the 'users' table does not match their authentication ID. Please ensure the 'user_id' in the 'public.users' table for Mike and Patti is their actual Supabase Authentication UID.`);
+
+        // Log out the programmatically signed-in user as a precaution
+        await supabase.auth.signOut();
+        currentProgrammaticUser = null;
+        return;
+    }
+
+    setDebugMessage(prev => `${prev} | UIDs match. Proceeding with save.`);
+    console.log(`Confirmed: ${userName}'s entry in public.users table (ID: ${usersTableEntry.user_id}) matches current Auth UID (${currentAuthUserId}). Proceeding with save.`);
+
+    const internalUserIdForSession = usersTableEntry.user_id; // This is now confirmed to be the Auth UID.
+
     const sourceData = editableData || {
       durations,
       totalElapsedTime,
@@ -435,25 +560,16 @@ function App() {
       : new Date().toISOString();
 
     try {
-      let { data: users, error: userError } = await supabase
-        .from('users')
-        .select('user_id')
-        .eq('name', userName)
-        .single();
-
-      if (userError || !users) {
-        console.error('Error fetching user or user not found:', userError);
-        alert(`Error finding user ${userName}. Data not saved.`);
-        return;
-      }
-      const userId = users.user_id;
+      // const userId = usersTableEntry.user_id; // This is now internalUserIdForSession and confirmed to be Auth UID
 
       const sessionEndTime = new Date().toISOString();
 
+      // The user_id being inserted here (internalUserIdForSession) is the Supabase Auth UID
+      // of the programmatically logged-in user. RLS policy `(select auth.uid()) = user_id` will pass.
       const { data: session, error: sessionError } = await supabase
         .from('workout_sessions')
         .insert([
-          { user_id: userId, start_time: sessionStartTimeToSave, end_time: sessionEndTime }
+          { user_id: internalUserIdForSession, start_time: sessionStartTimeToSave, end_time: sessionEndTime }
         ])
         .select()
         .single();
@@ -558,9 +674,20 @@ function App() {
       // resetAppStates(); 
       // setPhase(0);
 
+      // Optionally, sign out the programmatic user after successful save if sessions should be short-lived
+      // await supabase.auth.signOut();
+      // currentProgrammaticUser = null;
+      // console.log(`Programmatic user ${userName} signed out after saving data.`);
+
     } catch (error) {
       console.error('Unexpected error in saveWorkoutData:', error);
       alert('An unexpected error occurred while saving data.');
+      // Potentially sign out if an error occurs mid-process after login
+      if (currentProgrammaticUser) {
+        await supabase.auth.signOut();
+        currentProgrammaticUser = null;
+        console.log(`Programmatic user ${currentProgrammaticUser} signed out due to error during save.`);
+      }
     }
   };
 
@@ -572,7 +699,22 @@ function App() {
 
   return (
     <div className="app">
-      <h1 className="main-title">
+      <div style={{
+        backgroundColor: '#282c34',
+        color: 'white',
+        padding: '10px',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        zIndex: 1000,
+        borderBottom: '2px solid #61dafb',
+        fontSize: '0.9em',
+        fontFamily: 'monospace'
+      }}>
+        <strong>Debug Info:</strong> {debugMessage}
+      </div>
+      <h1 className="main-title" style={{ marginTop: '50px' }}> {/* Added margin to avoid overlap with debug bar */}
         {workoutStartTime !== null 
           ? `${formatTotalTime(totalElapsedTime)} | Phase ${formatTime(currentPhaseElapsedTime)}` 
           : ""}
