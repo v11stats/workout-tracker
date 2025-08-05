@@ -780,6 +780,7 @@ function App() {
                 onChange={(val) => handleEditableFieldChange('stretching', val, 'timeString')}
                 type="timeString"
                 unit="m s"
+                maxLength="10"
               />
               <EditableSummaryField
                 label="Hangboard duration"
@@ -787,6 +788,7 @@ function App() {
                 onChange={(val) => handleEditableFieldChange('hangboard', val, 'timeString')}
                 type="timeString"
                 unit="m s"
+                maxLength="10"
               />
               <EditableSummaryField
                 label="Climbing duration"
@@ -794,6 +796,7 @@ function App() {
                 onChange={(val) => handleEditableFieldChange('climbing', val, 'timeString')}
                 type="timeString"
                 unit="m s"
+                maxLength="10"
               />
               <EditableSummaryField
                 label="Power Endurance duration"
@@ -801,6 +804,7 @@ function App() {
                 onChange={(val) => handleEditableFieldChange('power_endurance', val, 'timeString')}
                 type="timeString"
                 unit="m s"
+                maxLength="10"
               />
               <EditableSummaryField
                 label="Rehab duration"
@@ -808,6 +812,7 @@ function App() {
                 onChange={(val) => handleEditableFieldChange('rehab', val, 'timeString')}
                 type="timeString"
                 unit="m s"
+                maxLength="10"
               />
               <EditableSummaryField
                 label="Total Workout Time"
@@ -815,6 +820,7 @@ function App() {
                 readOnly={true}
                 type="totalTimeString"
                 unit="H:MM"
+                maxLength="10"
               />
               <EditableSummaryField
                 label="Total Moves (Climbing)"
@@ -822,6 +828,7 @@ function App() {
                 readOnly={true}
                 type="number"
                 unit="moves"
+                maxLength="10"
               />
 
               <h3>Climbing Details</h3>
@@ -889,6 +896,7 @@ function App() {
                       onChange={(val) => handleEditableHangboardSetChange(index, 'weight', val)}
                       type="number"
                       unit="lbs"
+                      maxLength="4"
                     />
                     <EditableSummaryField
                       label="Duration"
@@ -896,6 +904,7 @@ function App() {
                       onChange={(val) => handleEditableHangboardSetChange(index, 'duration', val)}
                       type="number"
                       unit="secs"
+                      maxLength="4"
                     />
                     <EditableSummaryField
                       label="Edge Size"
@@ -903,6 +912,7 @@ function App() {
                       onChange={(val) => handleEditableHangboardSetChange(index, 'edgeSize', val)}
                       type="number"
                       unit="mm"
+                      maxLength="4"
                     />
                   </div>
                 ))
