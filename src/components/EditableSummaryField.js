@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const EditableSummaryField = ({ label, value: initialValue, onChange, type = 'text', unit = '' }) => {
+const EditableSummaryField = ({ label, value: initialValue, onChange, type = 'text', unit = '', readOnly = false }) => {
   const [currentValue, setCurrentValue] = useState(initialValue);
   const [isValidInput, setIsValidInput] = useState(true); // For visual feedback
 
@@ -49,7 +49,8 @@ const EditableSummaryField = ({ label, value: initialValue, onChange, type = 'te
     padding: '5px',
     border: `1px solid ${isValidInput ? '#ccc' : 'red'}`,
     borderRadius: '4px',
-    backgroundColor: isValidInput ? 'white' : '#fff0f0' // Optional: light red background for invalid
+    backgroundColor: readOnly ? '#f0f0f0' : (isValidInput ? 'white' : '#fff0f0'),
+    color: readOnly ? '#555' : 'black',
   };
 
   return (
@@ -61,6 +62,7 @@ const EditableSummaryField = ({ label, value: initialValue, onChange, type = 'te
         type={getInputType()}
         value={currentValue}
         onChange={handleChange}
+        readOnly={readOnly}
         style={inputStyle}
       />
       {unit && <span style={{ marginLeft: '5px' }}>{unit}</span>}
