@@ -781,6 +781,7 @@ function App() {
                 type="timeString"
                 unit="m s"
                 maxLength="10"
+                style={{ width: '12ch' }}
               />
               <EditableSummaryField
                 label="Hangboard duration"
@@ -789,6 +790,7 @@ function App() {
                 type="timeString"
                 unit="m s"
                 maxLength="10"
+                style={{ width: '12ch' }}
               />
               <EditableSummaryField
                 label="Climbing duration"
@@ -797,6 +799,7 @@ function App() {
                 type="timeString"
                 unit="m s"
                 maxLength="10"
+                style={{ width: '12ch' }}
               />
               <EditableSummaryField
                 label="Power Endurance duration"
@@ -805,6 +808,7 @@ function App() {
                 type="timeString"
                 unit="m s"
                 maxLength="10"
+                style={{ width: '12ch' }}
               />
               <EditableSummaryField
                 label="Rehab duration"
@@ -813,6 +817,7 @@ function App() {
                 type="timeString"
                 unit="m s"
                 maxLength="10"
+                style={{ width: '12ch' }}
               />
               <EditableSummaryField
                 label="Total Workout Time"
@@ -821,6 +826,7 @@ function App() {
                 type="totalTimeString"
                 unit="H:MM"
                 maxLength="10"
+                style={{ width: '12ch' }}
               />
               <EditableSummaryField
                 label="Total Moves (Climbing)"
@@ -829,6 +835,7 @@ function App() {
                 type="number"
                 unit="moves"
                 maxLength="10"
+                style={{ width: '12ch' }}
               />
 
               <h3>Climbing Details</h3>
@@ -897,6 +904,7 @@ function App() {
                       type="number"
                       unit="lbs"
                       maxLength="4"
+                      style={{ width: '6ch' }}
                     />
                     <EditableSummaryField
                       label="Duration"
@@ -905,6 +913,7 @@ function App() {
                       type="number"
                       unit="secs"
                       maxLength="4"
+                      style={{ width: '6ch' }}
                     />
                     <EditableSummaryField
                       label="Edge Size"
@@ -913,6 +922,7 @@ function App() {
                       type="number"
                       unit="mm"
                       maxLength="4"
+                      style={{ width: '6ch' }}
                     />
                   </div>
                 ))
@@ -931,6 +941,8 @@ function App() {
                       onChange={(val) => handleEditableWeightedPullSetChange(index, 'weight', val)}
                       type="number"
                       unit="lbs"
+                      maxLength="4"
+                      style={{ width: '6ch' }}
                     />
                     <EditableSummaryField
                       label="Reps"
@@ -938,6 +950,8 @@ function App() {
                       onChange={(val) => handleEditableWeightedPullSetChange(index, 'reps', val)}
                       type="number"
                       unit="reps"
+                      maxLength="3"
+                      style={{ width: '5ch' }}
                     />
                   </div>
                 ))
@@ -955,6 +969,8 @@ function App() {
                       value={set.grade}
                       onChange={(val) => handleEditablePowerEnduranceSetChange(index, 'grade', val)}
                       type="text"
+                      maxLength="5"
+                      style={{ width: '7ch' }}
                     />
                   </div>
                 ))
