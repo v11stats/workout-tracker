@@ -802,7 +802,7 @@ function App() {
                 style={{ width: '12ch' }}
               />
               <EditableSummaryField
-                label="Power Endurance duration"
+                label="P.E. duration"
                 value={formatDurationSummary(currentDisplayData.durations.power_endurance)}
                 onChange={(val) => handleEditableFieldChange('power_endurance', val, 'timeString')}
                 type="timeString"
