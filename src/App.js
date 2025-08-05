@@ -742,26 +742,7 @@ function App() {
 
   return (
     <div className="app">
-      <div style={{
-        backgroundColor: '#282c34',
-        color: 'white',
-        padding: '10px',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        zIndex: 1000,
-        borderBottom: '2px solid #61dafb',
-        fontSize: '0.9em',
-        fontFamily: 'monospace',
-        minHeight: '40px', // Ensure it has some height
-        whiteSpace: 'pre-wrap', // Allow text to wrap
-        wordBreak: 'break-word' // Break long words or strings
-      }}>
-        <strong>Debug Info:</strong>
-        <p style={{ margin: 0 }}>{debugMessage}</p>
-      </div>
-      <h1 className="main-title" style={{ marginTop: '50px' }}> {/* Added margin to avoid overlap with debug bar */}
+      <h1 className="main-title">
         {workoutStartTime !== null 
           ? `${formatTotalTime(totalElapsedTime)} | Phase ${formatTime(currentPhaseElapsedTime)}` 
           : ""}
@@ -863,31 +844,38 @@ function App() {
                   return <p>No climbing details recorded.</p>;
                 }
 
-                return grades.map(grade => (
-                  <div key={grade} className="climbing-grade-category" style={{ marginBottom: '15px' }}>
-                    <h4 style={{ marginBottom: '5px' }}>{grade}</h4>
-                    <div className="climbing-stats-row" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                      {Object.entries(statTypes).map(([type, label]) => {
-                        const key = `${grade}_${type}`;
-                        const value = currentDisplayData.climbingStats[key] || 0;
-                        // Display '-' if value is 0, but allow editing to a non-zero number
-                        const displayValue = value === 0 ? '-' : String(value);
-
-                        return (
-                          <div key={key} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '5px' }}>
-                            <span style={{ fontWeight: 'bold' }}>{label}:</span>
-                            <EditableSummaryField
-                              label="" // Label is now outside the component
-                              value={String(value)} // The input always gets the numeric value for editing
-                              onChange={(val) => handleEditableClimbingStatChange(key, val)}
-                              type="number"
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ));
+                return (
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ textAlign: 'left' }}>Grade</th>
+                        {Object.values(statTypes).map(label => <th key={label} style={{ textAlign: 'center' }}>{label}</th>)}
+                      </tr>
+                    </thead>
+                    <tbody>
+                    {grades.map(grade => (
+                      <tr key={grade}>
+                        <td style={{ textAlign: 'left', fontWeight: 'bold' }}>{grade}</td>
+                        {Object.keys(statTypes).map(type => {
+                          const key = `${grade}_${type}`;
+                          const value = currentDisplayData.climbingStats[key] || 0;
+                          return (
+                            <td key={key} style={{ textAlign: 'center' }}>
+                              <EditableSummaryField
+                                value={String(value)}
+                                onChange={(val) => handleEditableClimbingStatChange(key, val)}
+                                type="number"
+                                maxLength="2"
+                                style={{ width: '3em', textAlign: 'center' }}
+                              />
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                    </tbody>
+                  </table>
+                );
               })()}
               
               <h3>Hangboard Sets</h3>
