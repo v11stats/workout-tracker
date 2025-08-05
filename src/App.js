@@ -231,6 +231,30 @@ function App() {
     getData();
   }, []);
 
+  // Effect to recalculate total workout time when durations change in the editable summary
+  useEffect(() => {
+    if (editableData && editableData.durations) {
+      const { stretching, hangboard, climbing, power_endurance, rehab } = editableData.durations;
+      const newTotalElapsedTime = (stretching || 0) + (hangboard || 0) + (climbing || 0) + (power_endurance || 0) + (rehab || 0);
+
+      // Check if the total time has actually changed to prevent an infinite loop
+      if (newTotalElapsedTime !== editableData.totalElapsedTime) {
+        setEditableData(prev => ({ ...prev, totalElapsedTime: newTotalElapsedTime }));
+      }
+    }
+  }, [editableData?.durations]);
+
+  // Effect to recalculate total moves when climbing stats change in the editable summary
+  useEffect(() => {
+    if (editableData && editableData.climbingStats) {
+      const newTotalMoves = Object.values(editableData.climbingStats).reduce((sum, count) => sum + (count || 0), 0);
+      if (newTotalMoves !== editableData.totalMoves) {
+        setEditableData(prev => ({ ...prev, totalMoves: newTotalMoves }));
+      }
+    }
+  }, [editableData?.climbingStats]);
+
+
   const initializeEditableData = () => {
     // Initialize editableData with current values from state
     // This ensures that when the user first sees the summary, it reflects the tracked data.
@@ -633,14 +657,16 @@ function App() {
       }
 
       Object.entries(sourceData.climbingStats).forEach(([key, count]) => {
-        const [grade, type] = key.split('_');
-        dataToInsert.push({
-          session_id: sessionId,
-          category: 'climbing_stats',
-          variable_name: `${grade}_${type}`,
-          value: String(count),
-          unit: 'count'
-        });
+        if (count > 0) {
+          const [grade, type] = key.split('_');
+          dataToInsert.push({
+            session_id: sessionId,
+            category: 'climbing_stats',
+            variable_name: `${grade}_${type}`,
+            value: String(count),
+            unit: 'count'
+          });
+        }
       });
 
       if (sourceData.fingerboardData && sourceData.fingerboardData.hangboardSets) {
@@ -805,36 +831,64 @@ function App() {
               <EditableSummaryField
                 label="Total Workout Time"
                 value={formatTime(currentDisplayData.totalElapsedTime)}
-                onChange={(val) => handleEditableFieldChange('totalElapsedTime', val, 'totalTimeString')}
+                readOnly={true}
                 type="totalTimeString"
                 unit="H:MM"
               />
               <EditableSummaryField
                 label="Total Moves (Climbing)"
                 value={String(currentDisplayData.totalMoves)} // Ensure value is string for input
-                onChange={(val) => handleEditableFieldChange('totalMoves', val, 'number')}
+                readOnly={true}
                 type="number"
                 unit="moves"
               />
 
               <h3>Climbing Details</h3>
-              {Object.keys(currentDisplayData.climbingStats).length > 0 ? (
-                Object.entries(currentDisplayData.climbingStats).map(([key, count]) => {
-                  const [grade, type] = key.split('_');
-                  return (
-                    <EditableSummaryField
-                      key={key}
-                      label={`${grade} - ${type}`}
-                      value={String(count)}
-                      onChange={(val) => handleEditableClimbingStatChange(key, val)}
-                      type="number"
-                      unit="count"
-                    />
-                  );
-                })
-              ) : (
-                <p>No climbing details recorded.</p>
-              )}
+              {(() => {
+                const grades = ['<V5', 'V5-V6', 'V7-V8', 'V9-V10', 'V11+'];
+                const statTypes = {
+                  attempts: 'A',
+                  sends: 'S',
+                  flashes: 'F'
+                };
+
+                // Check if there is any climbing data at all
+                const hasClimbingData = grades.some(grade =>
+                  Object.keys(statTypes).some(type =>
+                    currentDisplayData.climbingStats[`${grade}_${type}`] > 0
+                  )
+                );
+
+                if (!hasClimbingData && Object.keys(currentDisplayData.climbingStats).length === 0) {
+                  return <p>No climbing details recorded.</p>;
+                }
+
+                return grades.map(grade => (
+                  <div key={grade} className="climbing-grade-category" style={{ marginBottom: '15px' }}>
+                    <h4 style={{ marginBottom: '5px' }}>{grade}</h4>
+                    <div className="climbing-stats-row" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                      {Object.entries(statTypes).map(([type, label]) => {
+                        const key = `${grade}_${type}`;
+                        const value = currentDisplayData.climbingStats[key] || 0;
+                        // Display '-' if value is 0, but allow editing to a non-zero number
+                        const displayValue = value === 0 ? '-' : String(value);
+
+                        return (
+                          <div key={key} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <span style={{ fontWeight: 'bold' }}>{label}:</span>
+                            <EditableSummaryField
+                              label="" // Label is now outside the component
+                              value={String(value)} // The input always gets the numeric value for editing
+                              onChange={(val) => handleEditableClimbingStatChange(key, val)}
+                              type="number"
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ));
+              })()}
               
               <h3>Hangboard Sets</h3>
               {currentDisplayData.fingerboardData && currentDisplayData.fingerboardData.hangboardSets && currentDisplayData.fingerboardData.hangboardSets.length > 0 ? (
